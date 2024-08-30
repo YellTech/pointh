@@ -97,11 +97,27 @@ class DbAccess:
         else:
             messagebox.showerror("Erro", f"Nenhuma conexão ativa para deletar funcionário.")
             
+    def verify_employee(self, name):
+        if self.conn:
+            try:
+                self.cursor.execute("""
+                SELECT COUNT(1) FROM funcionarios WHERE LOWER(nome) = LOWER(?)
+                """, (name,))
+                result = self.cursor.fetchone()
+                if result[0]>0:
+                    return True
+                else:
+                    return False
+            except sqlite3.Error as e:
+                messagebox.showerror("Erro", f"Erro ao listar Funcionário:\n {e}") 
+        else:
+            messagebox.showerror("Erro", f"Nenhuma conexão ativa para listar funcionário.") 
+            
     def get_all_employee(self):
         if self.conn:
             try:
                 self.cursor.execute("""
-                SELECT id, nome FROM funcionarios
+                SELECT id, nome FROM funcionarios ORDER BY nome ASC
                 """)
                 rows = self.cursor.fetchall()
                 return rows
@@ -164,7 +180,7 @@ class DbAccess:
         if self.conn:
             try:
                 self.cursor.execute("""
-                SELECT * FROM funcionarios
+                SELECT * FROM banco_horas
                 """)
                 rows = self.cursor.fetchall()
                 return rows
@@ -181,5 +197,6 @@ class DbAccess:
             
 if __name__ == "__main__":
     db = DbAccess()
-    db.add_time_entry()
+    print(db.verify_employee("samuel da silva proença"))
+    
     

@@ -13,6 +13,7 @@ class View(ThemedTk):
         
         self.config_file = "config.json"
         self.manager = Manager()
+        self.employee_id = None
         
         self.title("Controle de Ponto")
         self.geometry("1024x720")
@@ -20,7 +21,7 @@ class View(ThemedTk):
         self.iconbitmap("icon.ico")
         
         # Configuração das colunas e linhas principais
-        self.grid_columnconfigure(0, weight=1, uniform="group1")
+        self.grid_columnconfigure(0, weight=2, uniform="group1")
         self.grid_columnconfigure(1, weight=2, uniform="group1")
         self.grid_columnconfigure(2, weight=3, uniform="group1")
         self.grid_rowconfigure(0, weight=1)
@@ -97,27 +98,33 @@ class View(ThemedTk):
         self.tree_funcionarios = ttk.Treeview(self.frame_funcionarios, columns=("ID", "Nome"), show="headings")
         self.tree_funcionarios.heading("ID", text="ID")
         self.tree_funcionarios.heading("Nome", text="Nome")
-        self.tree_funcionarios.column("ID", width=30, anchor="center")
-        self.tree_funcionarios.column("Nome", width=150, anchor="center")
+        self.tree_funcionarios.column("ID", width=20, anchor="center")
+        self.tree_funcionarios.column("Nome", width=150, anchor="w")
         self.tree_funcionarios.grid(row=2, column=0, sticky="nsew", pady=5)
+        
+        self.tree_funcionarios.bind("<Double-1>", self.selected_employee)
 
         # Botões CRUD
-        self.btn_adicionar = ttk.Button(self.frame_funcionarios, text="Adicionar")
+        self.btn_adicionar = ttk.Button(self.frame_funcionarios, text="Adicionar",
+                                        command= self.add_employee_view)
         self.btn_adicionar.grid(row=3, column=0, sticky="ew", padx=5, pady=2)
-        self.btn_atualizar = ttk.Button(self.frame_funcionarios, text="Atualizar")
+        self.btn_atualizar = ttk.Button(self.frame_funcionarios, text="Editar",
+                                        command=self.update_employee_view)
         self.btn_atualizar.grid(row=4, column=0, sticky="ew", padx=5, pady=2)
-        self.btn_deletar = ttk.Button(self.frame_funcionarios, text="Deletar")
+        self.btn_deletar = ttk.Button(self.frame_funcionarios, text="Deletar", command=self.delete_employee)
         self.btn_deletar.grid(row=5, column=0, sticky="ew", padx=5, pady=2)
     
     def create_ponto_components(self):
+        self.employee_label = ttk.Label(self.frame_ponto, text="***Selecione um funcionário***", foreground="red")
+        self.employee_label.grid(row=0, column=0, columnspan=2, sticky="ew", pady=5, padx=5)
         # Entradas para os pontos (Entrada 1, Saída 1, etc.)
-        self.entry_data = DateEntry(self.frame_ponto, date_pattern='dd/mm/YYYY').grid(row=0, column=0, sticky="ew", pady=5, padx=5)
-        ttk.Label(self.frame_ponto, text="Entrada 1").grid(row=1, column=0, sticky="w", pady=1)
-        ttk.Label(self.frame_ponto, text="Saída 1").grid(row=1, column=1, sticky="w", pady=1)
-        ttk.Label(self.frame_ponto, text="Entrada 2").grid(row=3, column=0, sticky="w", pady=1)
-        ttk.Label(self.frame_ponto, text="Saída 2").grid(row=3, column=1, sticky="w", pady=1)
-        ttk.Label(self.frame_ponto, text="Entrada 3").grid(row=5, column=0, sticky="w", pady=1)
-        ttk.Label(self.frame_ponto, text="Saída 3").grid(row=5, column=1, sticky="w", pady=1)
+        self.entry_data = DateEntry(self.frame_ponto, date_pattern='dd/mm/YYYY').grid(row=1, column=0, sticky="ew", pady=5, padx=5)
+        ttk.Label(self.frame_ponto, text="Entrada 1").grid(row=2, column=0, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Saída 1").grid(row=2, column=1, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Entrada 2").grid(row=4, column=0, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Saída 2").grid(row=4, column=1, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Entrada 3").grid(row=6, column=0, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Saída 3").grid(row=6, column=1, sticky="w", pady=1)
 
         # Entradas e saídas
         self.entry_entrada_1 = ttk.Entry(self.frame_ponto)
@@ -129,16 +136,16 @@ class View(ThemedTk):
 
         # Posicionar as entradas e saídas com grid
         
-        self.entry_entrada_1.grid(row=2, column=0, sticky="ew", pady=10, padx=5)
-        self.entry_saida_1.grid(row=2, column=1, sticky="ew", pady=10)
-        self.entry_entrada_2.grid(row=4, column=0, sticky="ew", pady=10, padx=5)
-        self.entry_saida_2.grid(row=4, column=1, sticky="ew", pady=10)
-        self.entry_entrada_3.grid(row=6, column=0, sticky="ew", pady=10, padx=5)
-        self.entry_saida_3.grid(row=6, column=1, sticky="ew", pady=10)
+        self.entry_entrada_1.grid(row=3, column=0, sticky="ew", pady=10, padx=5)
+        self.entry_saida_1.grid(row=3, column=1, sticky="ew", pady=10)
+        self.entry_entrada_2.grid(row=5, column=0, sticky="ew", pady=10, padx=5)
+        self.entry_saida_2.grid(row=5, column=1, sticky="ew", pady=10)
+        self.entry_entrada_3.grid(row=7, column=0, sticky="ew", pady=10, padx=5)
+        self.entry_saida_3.grid(row=7, column=1, sticky="ew", pady=10)
         
         # Botão para adicionar ponto
         self.btn_adicionar_ponto = ttk.Button(self.frame_ponto, text="Adicionar Ponto")
-        self.btn_adicionar_ponto.grid(row=7, column=0, columnspan=2, sticky="ew", pady=5)
+        self.btn_adicionar_ponto.grid(row=8, column=0, columnspan=2, sticky="ew", pady=5)
     
     def create_treeview_components(self):
         # Entradas para intervalo de datas
@@ -170,15 +177,53 @@ class View(ThemedTk):
         # self.canvas_dashboard = tk.Canvas(self.frame_dashboard)
         # self.canvas_dashboard.grid(row=1, column=0, sticky="nsew")
     
+    def selected_employee(self, event):
+        try:
+            item = self.tree_funcionarios.selection()[0]
+            self.values = self.tree_funcionarios.item(item, 'values')
+            self.employee_id = self.values[0]
+            self.employee_label.configure(text=self.values[1], foreground="")
+            self.entry_nome.delete(0, tk.END)
+            self.entry_nome.insert(0, self.values[1])
+        except:
+            pass
+    
+    def add_employee_view(self):
+        self.manager.handle_add_employee(self.entry_nome.get())
+        self.entry_nome.delete(0, tk.END)
+        self.employee_id = None
+        self.label_selected_employee()
+        self.update_treeviews_by_id(1)
+        
+    def update_employee_view(self):
+        if self.entry_nome.get():
+            self.manager.handle_update_employee(self.employee_id, self.values[1], self.entry_nome.get())
+            self.entry_nome.delete(0, tk.END)
+            self.employee_id = None
+            self.label_selected_employee()
+            self.update_treeviews_by_id(1)
+        else:
+            messagebox.showerror("Erro", "Selecione um funcionário para editar.")
+            
+    def delete_employee(self):
+        if self.entry_nome.get():
+            alert =  messagebox.askyesno("Atenção", f"Deseja mesmo deletar o funcionário:\n\n{self.entry_nome.get()}")
+            if alert == "yes":
+                self.manager.handle_delete_employee(self.employee_id)
+                self.entry_nome.delete(0, tk.END)
+                self.employee_id = None
+                self.label_selected_employee()
+                self.update_treeviews_by_id(1)
+        else:
+            messagebox.showerror("Erro", "Selecione um funcionário para deletar.")
+        
     def update_treeviews_by_id(self, view_id):
         if view_id == 1:
             data = self.manager.get_employee()
             self.update_treeview(self.tree_funcionarios, data)
         elif view_id == 2:
-            pass
-        elif view_id == 3:
-            data1 = self.manager.get_employee()
-            self.update_treeview(self.tree_funcionarios, data1)
+            data = self.manager.get_entry()
+            self.update_treeview(self.tree_pontos, data)
         else:
             messagebox.showerror("Erro", "Erro ao atualizar as treeviews.")
                 
@@ -228,7 +273,9 @@ class View(ThemedTk):
         default_config = {"carga_horaria": ""}
         with open(self.config_file, "w") as file:
             json.dump(default_config, file, indent=4)
-        
+    
+    def label_selected_employee(self):
+        self.employee_label.configure(text="***Selecione um funcionário***", foreground="red")
 
 if __name__ == "__main__":
     app = View()

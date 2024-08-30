@@ -1,5 +1,5 @@
 from view.view import View
-from model.model import DbAccess
+from model.dbaccess import DbAccess
 
 def run():
     db_init = DbAccess()
