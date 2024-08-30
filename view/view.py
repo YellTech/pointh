@@ -1,7 +1,9 @@
 import tkinter as tk
+from tkinter import messagebox
 from ttkthemes import ThemedTk
 from tkinter import ttk
 from tkcalendar import DateEntry
+from controller.manager import Manager
 import json
 import os
 
@@ -10,10 +12,12 @@ class View(ThemedTk):
         super().__init__(theme=theme)
         
         self.config_file = "config.json"
+        self.manager = Manager()
         
         self.title("Controle de Ponto")
         self.geometry("1024x720")
         self.minsize(1024, 720)
+        self.iconbitmap("icon.ico")
         
         # Configuração das colunas e linhas principais
         self.grid_columnconfigure(0, weight=1, uniform="group1")
@@ -25,6 +29,7 @@ class View(ThemedTk):
         # Frames
         self.create_frames()
         self.load_config()
+        self.update_treeviews_by_id(1)
         
     def create_frames(self):
         # Frame para CRUD de Funcionários
@@ -92,8 +97,8 @@ class View(ThemedTk):
         self.tree_funcionarios = ttk.Treeview(self.frame_funcionarios, columns=("ID", "Nome"), show="headings")
         self.tree_funcionarios.heading("ID", text="ID")
         self.tree_funcionarios.heading("Nome", text="Nome")
-        self.tree_funcionarios.column("ID", width=30)
-        self.tree_funcionarios.column("Nome", width=150)
+        self.tree_funcionarios.column("ID", width=30, anchor="center")
+        self.tree_funcionarios.column("Nome", width=150, anchor="center")
         self.tree_funcionarios.grid(row=2, column=0, sticky="nsew", pady=5)
 
         # Botões CRUD
@@ -152,6 +157,9 @@ class View(ThemedTk):
         self.tree_pontos.heading("Data", text="Data")
         self.tree_pontos.heading("Total", text="Total")
         self.tree_pontos.heading("Saldo", text="Saldo")
+        self.tree_pontos.column("Data", anchor="center")
+        self.tree_pontos.column("Total", anchor="center")
+        self.tree_pontos.column("Saldo", anchor="center")
         self.tree_pontos.grid(row=2, column=0, columnspan=3, sticky="nsew", pady=5)
     
     def create_dashboard_components(self):
@@ -161,6 +169,24 @@ class View(ThemedTk):
         # Exemplo:
         # self.canvas_dashboard = tk.Canvas(self.frame_dashboard)
         # self.canvas_dashboard.grid(row=1, column=0, sticky="nsew")
+    
+    def update_treeviews_by_id(self, view_id):
+        if view_id == 1:
+            data = self.manager.get_employee()
+            self.update_treeview(self.tree_funcionarios, data)
+        elif view_id == 2:
+            pass
+        elif view_id == 3:
+            data1 = self.manager.get_employee()
+            self.update_treeview(self.tree_funcionarios, data1)
+        else:
+            messagebox.showerror("Erro", "Erro ao atualizar as treeviews.")
+                
+    def update_treeview(self, treeview, data):
+        treeview.delete(*treeview.get_children())
+        
+        for row in data:
+            treeview.insert("", "end", values=row)    
         
     def open_config_window(self):
         # Cria a janela de configuração
@@ -168,6 +194,7 @@ class View(ThemedTk):
         top.title("Configurações")
         top.geometry("300x200")
         top.resizable(False, False)
+        top.iconbitmap("config.ico")
         top.grab_set()
         
         
