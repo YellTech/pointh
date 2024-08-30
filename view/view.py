@@ -197,18 +197,22 @@ class View(ThemedTk):
         
     def update_employee_view(self):
         if self.entry_nome.get():
-            self.manager.handle_update_employee(self.employee_id, self.values[1], self.entry_nome.get())
-            self.entry_nome.delete(0, tk.END)
-            self.employee_id = None
-            self.label_selected_employee()
-            self.update_treeviews_by_id(1)
+            alert =  messagebox.askyesno("Atenção", f"Deseja mesmo editar o funcionário com o ID:\n\n{self.employee_id}")
+            if alert:
+                self.manager.handle_update_employee(self.employee_id, self.values[1], self.entry_nome.get())
+                self.entry_nome.delete(0, tk.END)
+                self.employee_id = None
+                self.label_selected_employee()
+                self.update_treeviews_by_id(1)
+        elif self.employee_id:
+            messagebox.showerror("Erro", "O nome nao pode ser vazio.")
         else:
             messagebox.showerror("Erro", "Selecione um funcionário para editar.")
             
     def delete_employee(self):
         if self.entry_nome.get():
-            alert =  messagebox.askyesno("Atenção", f"Deseja mesmo deletar o funcionário:\n\n{self.entry_nome.get()}")
-            if alert == "yes":
+            alert =  messagebox.askyesno("Atenção", f"Deseja mesmo deletar o funcionário com o ID:\n\n{self.employee_id}")
+            if alert:
                 self.manager.handle_delete_employee(self.employee_id)
                 self.entry_nome.delete(0, tk.END)
                 self.employee_id = None
@@ -260,8 +264,7 @@ class View(ThemedTk):
         with open(self.config_file, "r") as file:
             config = json.load(file)
             self.carga_horaria = config.get("carga_horaria", "")
-            
-    
+              
     def save_config(self, top):
         carga_horaria = self.entry_carga_horaria.get()
         config = {"carga_horaria": carga_horaria}
