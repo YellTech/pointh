@@ -6,6 +6,7 @@ from tkcalendar import DateEntry
 from controller.manager import Manager
 import json
 import os
+import re
 
 class View(ThemedTk):
     def __init__(self, theme="radiance"):
@@ -115,15 +116,15 @@ class View(ThemedTk):
         self.btn_deletar.grid(row=5, column=0, sticky="ew", padx=5, pady=2)
     
     def create_ponto_components(self):
-        self.employee_label = ttk.Label(self.frame_ponto, text="***Selecione um funcionário***", foreground="red")
+        self.employee_label = ttk.Label(self.frame_ponto, text="Selecione um funcionário", foreground="red", font="bold")
         self.employee_label.grid(row=0, column=0, columnspan=2, sticky="ew", pady=5, padx=5)
         # Entradas para os pontos (Entrada 1, Saída 1, etc.)
         self.entry_data = DateEntry(self.frame_ponto, date_pattern='dd/mm/YYYY').grid(row=1, column=0, sticky="ew", pady=5, padx=5)
-        ttk.Label(self.frame_ponto, text="Entrada 1").grid(row=2, column=0, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Entrada 1").grid(row=2, column=0, sticky="w", pady=1, padx=(0, 30))
         ttk.Label(self.frame_ponto, text="Saída 1").grid(row=2, column=1, sticky="w", pady=1)
-        ttk.Label(self.frame_ponto, text="Entrada 2").grid(row=4, column=0, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Entrada 2").grid(row=4, column=0, sticky="w", pady=1, padx=(0, 30))
         ttk.Label(self.frame_ponto, text="Saída 2").grid(row=4, column=1, sticky="w", pady=1)
-        ttk.Label(self.frame_ponto, text="Entrada 3").grid(row=6, column=0, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Entrada 3").grid(row=6, column=0, sticky="w", pady=1, padx=(0, 30))
         ttk.Label(self.frame_ponto, text="Saída 3").grid(row=6, column=1, sticky="w", pady=1)
 
         # Entradas e saídas
@@ -136,16 +137,28 @@ class View(ThemedTk):
 
         # Posicionar as entradas e saídas com grid
         
-        self.entry_entrada_1.grid(row=3, column=0, sticky="ew", pady=10, padx=5)
-        self.entry_saida_1.grid(row=3, column=1, sticky="ew", pady=10)
-        self.entry_entrada_2.grid(row=5, column=0, sticky="ew", pady=10, padx=5)
-        self.entry_saida_2.grid(row=5, column=1, sticky="ew", pady=10)
-        self.entry_entrada_3.grid(row=7, column=0, sticky="ew", pady=10, padx=5)
-        self.entry_saida_3.grid(row=7, column=1, sticky="ew", pady=10)
+        self.entry_entrada_1.grid(row=3, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
+        self.entry_saida_1.grid(row=3, column=1, sticky="ew", pady=(1, 10))
+        self.entry_entrada_2.grid(row=5, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
+        self.entry_saida_2.grid(row=5, column=1, sticky="ew", pady=(1, 10))
+        self.entry_entrada_3.grid(row=7, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
+        self.entry_saida_3.grid(row=7, column=1, sticky="ew", pady=(1, 10))
         
-        # Botão para adicionar ponto
-        self.btn_adicionar_ponto = ttk.Button(self.frame_ponto, text="Adicionar Ponto")
-        self.btn_adicionar_ponto.grid(row=8, column=0, columnspan=2, sticky="ew", pady=5)
+        # Binds entrys
+        self.entry_entrada_1.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_entrada_1))
+        self.entry_saida_1.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_saida_1))
+        self.entry_entrada_2.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_entrada_2))
+        self.entry_saida_2.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_saida_2))
+        self.entry_entrada_3.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_entrada_3))
+        self.entry_saida_3.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_saida_3))
+        
+        # Botôes para ponto
+        self.btn_adicionar_ponto = ttk.Button(self.frame_ponto, text="Adicionar", command=self.add_point)
+        self.btn_adicionar_ponto.grid(row=8, column=0, columnspan=2, sticky="ew", pady=2)
+        self.btn_edit_point = ttk.Button(self.frame_ponto, text="Editar", command=self.update_point)
+        self.btn_edit_point.grid(row=9, column=0, columnspan=2, sticky="ew", pady=2)
+        self.btn_delete_point = ttk.Button(self.frame_ponto, text="Deletar", command=self.delete_point)
+        self.btn_delete_point.grid(row=10, column=0, columnspan=2, sticky="ew", pady=2)
     
     def create_treeview_components(self):
         # Entradas para intervalo de datas
@@ -164,9 +177,9 @@ class View(ThemedTk):
         self.tree_pontos.heading("Data", text="Data")
         self.tree_pontos.heading("Total", text="Total")
         self.tree_pontos.heading("Saldo", text="Saldo")
-        self.tree_pontos.column("Data", anchor="center")
-        self.tree_pontos.column("Total", anchor="center")
-        self.tree_pontos.column("Saldo", anchor="center")
+        self.tree_pontos.column("Data", anchor="center", width=150)
+        self.tree_pontos.column("Total", anchor="center", width=150)
+        self.tree_pontos.column("Saldo", anchor="center", width=150)
         self.tree_pontos.grid(row=2, column=0, columnspan=3, sticky="nsew", pady=5)
     
     def create_dashboard_components(self):
@@ -182,7 +195,7 @@ class View(ThemedTk):
             item = self.tree_funcionarios.selection()[0]
             self.values = self.tree_funcionarios.item(item, 'values')
             self.employee_id = self.values[0]
-            self.employee_label.configure(text=self.values[1], foreground="")
+            self.employee_label.configure(text=self.values[1])
             self.entry_nome.delete(0, tk.END)
             self.entry_nome.insert(0, self.values[1])
         except:
@@ -196,7 +209,7 @@ class View(ThemedTk):
         self.update_treeviews_by_id(1)
         
     def update_employee_view(self):
-        if self.entry_nome.get():
+        if self.entry_nome.get() and self.employee_id:
             alert =  messagebox.askyesno("Atenção", f"Deseja mesmo editar o funcionário com o ID:\n\n{self.employee_id}")
             if alert:
                 self.manager.handle_update_employee(self.employee_id, self.values[1], self.entry_nome.get())
@@ -210,7 +223,7 @@ class View(ThemedTk):
             messagebox.showerror("Erro", "Selecione um funcionário para editar.")
             
     def delete_employee(self):
-        if self.entry_nome.get():
+        if self.entry_nome.get() and self.employee_id:
             alert =  messagebox.askyesno("Atenção", f"Deseja mesmo deletar o funcionário com o ID:\n\n{self.employee_id}")
             if alert:
                 self.manager.handle_delete_employee(self.employee_id)
@@ -220,13 +233,22 @@ class View(ThemedTk):
                 self.update_treeviews_by_id(1)
         else:
             messagebox.showerror("Erro", "Selecione um funcionário para deletar.")
+    
+    def add_point(self):
+        print(self.entry_saida_3.get())
+    
+    def update_point(self):
+        pass
+    
+    def delete_point(self):
+        pass
         
     def update_treeviews_by_id(self, view_id):
         if view_id == 1:
             data = self.manager.get_employee()
             self.update_treeview(self.tree_funcionarios, data)
         elif view_id == 2:
-            data = self.manager.get_entry()
+            data = self.manager.get_point_employee(self.employee_id)
             self.update_treeview(self.tree_pontos, data)
         else:
             messagebox.showerror("Erro", "Erro ao atualizar as treeviews.")
@@ -273,12 +295,53 @@ class View(ThemedTk):
         top.destroy()
 
     def ensure_default_config(self):
-        default_config = {"carga_horaria": ""}
+        default_config = {"carga_horaria": "8"}
         with open(self.config_file, "w") as file:
             json.dump(default_config, file, indent=4)
     
     def label_selected_employee(self):
-        self.employee_label.configure(text="***Selecione um funcionário***", foreground="red")
+        self.employee_label.configure(text="Selecione um funcionário")
+
+    def format_time_entry(self, entry_widget):
+        """
+        Formata a entrada de tempo em uma Entry widget para o formato HH:MM.
+        :param entry_widget: O widget Entry que contém a entrada de tempo.
+        """
+        # Obtém o texto atual da Entry
+        current_text = entry_widget.get()
+        
+        # Remove tudo que não é dígito
+        digits = re.sub(r'\D', '', current_text)
+        
+        # Adiciona zeros à esquerda se necessário
+        if len(digits) > 4:
+            digits = digits[:4]
+        if len(digits) == 4:
+            if int(digits[:2]) < 24 and int(digits[2:]) < 60 :
+                formatted_time = f"{digits[:2]}:{digits[2:]}"
+            else:
+                formatted_time = f"Hora inválida"
+        elif len(digits) == 3:
+            if int(digits[:1]) < 24 and int(digits[1:]) < 60:
+                formatted_time = f"0{digits[:1]}:{digits[1:]}"
+            else:
+                formatted_time = f"Hora inválida"
+        elif len(digits) == 2:
+            if int(digits[:2]) < 24:
+                formatted_time = f"{digits[:2]}:00"
+            else:
+                formatted_time = f"Hora inválida"
+        elif len(digits) == 1:
+            formatted_time = f"0{digits[:1]}:00"
+        else:
+            formatted_time = digits
+        
+        # Atualiza o texto da Entry com o formato correto
+        entry_widget.delete(0, 'end')
+        entry_widget.insert(0, formatted_time)
+        
+        # Move o cursor para o final da entrada
+        entry_widget.icursor('end')
 
 if __name__ == "__main__":
     app = View()

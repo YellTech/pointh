@@ -47,15 +47,15 @@ class DbAccess:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     funcionario_id INTEGER,
                     data  DATE NOT NULL,
-                    entrada_1 REAL NOT NULL,
-                    saida_1 REAL NOT NULL,
-                    entrada_2 REAL NOT NULL,
-                    saida_2 REAL NOT NULL,
-                    entrada_3 REAL NOT NULL,
-                    saida_3 REAL NOT NULL,
-                    total REAL NOT NULL,
-                    carga_dia REAL NOT NULL,
-                    saldo_dia REAL NOT NULL,
+                    entrada_1 INTEGER NOT NULL,
+                    saida_1 INTEGER NOT NULL,
+                    entrada_2 INTEGER NOT NULL,
+                    saida_2 INTEGER NOT NULL,
+                    entrada_3 INTEGER NOT NULL,
+                    saida_3 INTEGER NOT NULL,
+                    total INTEGER NOT NULL,
+                    carga_dia INTEGER NOT NULL,
+                    saldo_dia INTEGER NOT NULL,
                     FOREIGN KEY (funcionario_id) REFERENCES funcionarios(id) ON DELETE CASCADE
                 )                    
                 """)
@@ -128,7 +128,7 @@ class DbAccess:
             try:
                 self.cursor.execute("""
                 DELETE FROM funcionarios WHERE id = ?                    
-                """, (id))
+                """, (id,))
                 
                 self.conn.commit()
                 messagebox.showinfo("Atenção", f"Funcionário deletado com sucesso.")   
@@ -317,18 +317,25 @@ class DbAccess:
         else:
             messagebox.showerror("Erro", f"Nenhuma conexão ativa para deletar ponto.")
             
-    def get_all_entry(self):
+    def get_all_entry(self, employee_id):
         """
-        This function retrieves all entries from a table named "banco_horas" in a database if a
-        connection is active.
-        :return: The `get_all_entry` method is returning all rows from the `banco_horas` table in the
-        database. It executes a SELECT query to fetch all records and returns them as a list of rows.
+        This function retrieves all entries from a database table based on the employee ID provided.
+        
+        :param employee_id: The `employee_id` parameter in the `get_all_entry` method is used to filter
+        the entries in the `banco_horas` table based on the specified employee ID. The method executes a
+        SQL query to select all entries from the `banco_horas` table where the `funcionario
+        :return: The `get_all_entry` method is returning all entries from the "banco_horas" table in the
+        database where the "funcionario_id" matches the provided `employee_id`. The entries are ordered
+        in descending order based on an unspecified column. The method returns the fetched rows as a
+        result.
         """
         if self.conn:
             try:
                 self.cursor.execute("""
                 SELECT * FROM banco_horas
-                """)
+                WHERE funcionario_id = ?
+                ORDER BY data DESC
+                """, (employee_id,))
                 rows = self.cursor.fetchall()
                 return rows
             except sqlite3.Error as e:
@@ -348,6 +355,6 @@ class DbAccess:
             
 if __name__ == "__main__":
     db = DbAccess()
-    print(db.verify_employee("samuel da silva proença"))
+    print(db.get_all_entry(1))
     
     

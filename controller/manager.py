@@ -62,16 +62,26 @@ class Manager:
         employees = self.db.get_all_employee()
         return employees
     
-    def get_entry(self):
+    def handle_add_point(self, funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia):
+        entrys = [funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia]
+        for i in entrys:
+            if i:
+                return
+            else:
+                messagebox.showerror("Erro", "Preencha todos os campos.")
+    
+    def get_point_employee(self, employee_id):
         """
-        This function retrieves specific entries from a database based on given indices.
-        :return: A list of tuples containing values from specific indices (0, 2, 9, 11) of each entry
-        retrieved from the database.
+        This function retrieves specific data points for a given employee from a database.
+        
+        :param employee_id: The `get_point_employee` method takes an `employee_id` as a parameter. This
+        method retrieves specific entries from a database for the given `employee_id` and returns a list
+        of tuples containing selected values from those entries
+        :return: The `get_point_employee` method returns a list of tuples containing specific data
+        points for a given employee. The data points are extracted from the entries retrieved from the
+        database for the specified employee ID.
         """
         indices = [0, 2, 9, 11]
-        entrys = self.db.get_all_entry()
+        entrys = self.db.get_all_entry(employee_id)
         entrys = [tuple(tupla[i] for i in indices) for tupla in entrys]
         return entrys
-    
-if __name__ == "__main__":
-    mg = Manager()
