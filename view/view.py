@@ -294,13 +294,17 @@ class View(ThemedTk):
               
     def save_config(self, top):
         carga_horaria = self.entry_carga_horaria.get()
+        digits = re.sub(r'\D', '', carga_horaria)
+        if not carga_horaria or carga_horaria == "0":
+            messagebox.showerror("Erro", "A carga horária dever conter apenas numeros e\nser difente de zero ou vazio.")
+            return
         config = {"carga_horaria": carga_horaria}
         with open(self.config_file, "w") as file:
             json.dump(config, file, indent=4)
         top.destroy()
 
     def ensure_default_config(self):
-        default_config = {"carga_horaria": "8"}
+        default_config = {"carga_horaria": "8:00"}
         with open(self.config_file, "w") as file:
             json.dump(default_config, file, indent=4)
     
