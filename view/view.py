@@ -14,7 +14,7 @@ class View(ThemedTk):
         
         self.config_file = "config.json"
         self.manager = Manager()
-        self.employee_id = None
+        self.employee_id = 0
         
         self.title("Controle de Ponto")
         self.geometry("1024x720")
@@ -119,7 +119,7 @@ class View(ThemedTk):
         self.employee_label = ttk.Label(self.frame_ponto, text="Selecione um funcionário", foreground="red", font="bold")
         self.employee_label.grid(row=0, column=0, columnspan=2, sticky="ew", pady=5, padx=5)
         # Entradas para os pontos (Entrada 1, Saída 1, etc.)
-        self.entry_data = DateEntry(self.frame_ponto, date_pattern='dd/mm/YYYY')
+        self.entry_data = DateEntry(self.frame_ponto, date_pattern='dd-mm-YYYY')
         self.entry_data.grid(row=1, column=0, sticky="ew", pady=5, padx=5)
         ttk.Label(self.frame_ponto, text="Entrada 1").grid(row=2, column=0, sticky="w", pady=1, padx=(0, 30))
         ttk.Label(self.frame_ponto, text="Saída 1").grid(row=2, column=1, sticky="w", pady=1)
@@ -166,21 +166,23 @@ class View(ThemedTk):
         self.label_datas = ttk.Label(self.frame_treeview, text="Filtrar por Datas:")
         self.label_datas.grid(row=0, column=0, columnspan=3, sticky="ew")
         
-        self.entry_data_inicio = DateEntry(self.frame_treeview, date_pattern='dd/mm/YYYY')
+        self.entry_data_inicio = DateEntry(self.frame_treeview, date_pattern='dd-mm-YYYY')
         self.entry_data_inicio.grid(row=1, column=0, sticky="ew", padx=5)
-        self.entry_data_fim = DateEntry(self.frame_treeview, date_pattern='dd/mm/YYYY')
+        self.entry_data_fim = DateEntry(self.frame_treeview, date_pattern='dd-mm-YYYY')
         self.entry_data_fim.grid(row=1, column=1, sticky="ew", padx=5)
-        self.btn_filtrar = ttk.Button(self.frame_treeview, text="Filtrar")
+        self.btn_filtrar = ttk.Button(self.frame_treeview, text="Filtrar", command= self.filter_treeview_point)
         self.btn_filtrar.grid(row=1, column=2, sticky="ew", padx=5)
         
         # Treeview para exibir pontos do funcionário selecionado
-        self.tree_pontos = ttk.Treeview(self.frame_treeview, columns=("Data", "Total", "Saldo"), show="headings")
+        self.tree_pontos = ttk.Treeview(self.frame_treeview, columns=("ID", "Data", "Total", "Saldo"), show="headings")
+        self.tree_pontos.heading("ID", text="ID")
         self.tree_pontos.heading("Data", text="Data")
         self.tree_pontos.heading("Total", text="Total")
         self.tree_pontos.heading("Saldo", text="Saldo")
-        self.tree_pontos.column("Data", anchor="center", width=150)
-        self.tree_pontos.column("Total", anchor="center", width=150)
-        self.tree_pontos.column("Saldo", anchor="center", width=150)
+        self.tree_pontos.column("ID", anchor="center", width=30)
+        self.tree_pontos.column("Data", anchor="center", width=140)
+        self.tree_pontos.column("Total", anchor="center", width=140)
+        self.tree_pontos.column("Saldo", anchor="center", width=140)
         self.tree_pontos.grid(row=2, column=0, columnspan=3, sticky="nsew", pady=5)
     
     def create_dashboard_components(self):
@@ -199,6 +201,7 @@ class View(ThemedTk):
             self.employee_label.configure(text=self.values[1])
             self.entry_nome.delete(0, tk.END)
             self.entry_nome.insert(0, self.values[1])
+            self.update_treeviews_by_id(2)
         except:
             pass
     
@@ -236,23 +239,27 @@ class View(ThemedTk):
             messagebox.showerror("Erro", "Selecione um funcionário para deletar.")
     
     def add_point(self):
-        self.manager.handle_add_point(self.employee_id, self.entry_data.get(),
-                                      self.entry_entrada_1.get(), self.entry_saida_1.get(),
-                                      self.entry_entrada_2.get(), self.entry_saida_2.get(),
-                                      self.entry_entrada_3.get(), self.entry_saida_3.get())
+        entrys_points = [self.employee_id, self.entry_data.get(), self.entry_entrada_1.get(), self.entry_saida_1.get(),
+                                      self.entry_entrada_2.get(), self.entry_saida_2.get(), self.entry_entrada_3.get(),
+                                      self.entry_saida_3.get()]
+        self.manager.handle_add_point(entrys_points)
+        self.update_treeviews_by_id(2)
     
     def update_point(self):
         pass
     
     def delete_point(self):
-        pass
+        pass 
+
+    def filter_treeview_point(self):
+        self.update_treeviews_by_id(2, self.entry_data_inicio.get(), self.entry_data_fim.get())
         
-    def update_treeviews_by_id(self, view_id):
+    def update_treeviews_by_id(self, view_id, data_initial = None, data_end = None):
         if view_id == 1:
             data = self.manager.get_employee()
             self.update_treeview(self.tree_funcionarios, data)
         elif view_id == 2:
-            data = self.manager.get_point_employee(self.employee_id)
+            data = self.manager.get_point_employee(self.employee_id, data_initial, data_end)
             self.update_treeview(self.tree_pontos, data)
         else:
             messagebox.showerror("Erro", "Erro ao atualizar as treeviews.")

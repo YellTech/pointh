@@ -2,12 +2,19 @@ import sqlite3
 from tkinter import messagebox
 
 """
-Optei por usar messagebox no model ao invez de retornar para controller->view e entao exibir a messagebox por questões
+Optei por usar messagebox no model  e não ter que retornar para controller->view e entao exibir a messagebox por questões
 de produtividade, sinta-se a vontade para modificar.
 """
 
 class DbAccess:
     def __init__(self, db_name="model/database.db"):
+        """
+        The function initializes a database connection with a default database name.
+        
+        :param db_name: The `db_name` parameter in the `__init__` method is a default parameter that
+        specifies the name of the database file. If no value is provided when creating an instance of
+        the class, it will default to "model/database.db", defaults to model/database.db (optional)
+        """
         self.db_name = db_name
         self.conn = self.create_connection()
         self.cursor = self.conn.cursor() if self.conn else None
@@ -317,29 +324,43 @@ class DbAccess:
         else:
             messagebox.showerror("Erro", f"Nenhuma conexão ativa para deletar ponto.")
             
-    def get_all_entry(self, employee_id):
-        """
-        This function retrieves all entries from a database table based on the employee ID provided.
-        
-        :param employee_id: The `employee_id` parameter in the `get_all_entry` method is used to filter
-        the entries in the `banco_horas` table based on the specified employee ID. The method executes a
-        SQL query to select all entries from the `banco_horas` table where the `funcionario
-        :return: The `get_all_entry` method is returning all entries from the "banco_horas" table in the
-        database where the "funcionario_id" matches the provided `employee_id`. The entries are ordered
-        in descending order based on an unspecified column. The method returns the fetched rows as a
-        result.
-        """
+    def get_all_entry(self, employee_id, data_initial = None, data_end=None):
         if self.conn:
             try:
-                self.cursor.execute("""
-                SELECT * FROM banco_horas
-                WHERE funcionario_id = ?
-                ORDER BY data DESC
-                """, (employee_id,))
+                if data_initial and data_end:
+                    query = """
+                    SELECT * FROM banco_horas
+                    WHERE funcionario_id = ?
+                    AND data BETWEEN ? AND ?
+                    """
+                    params = (employee_id, data_initial, data_end)
+                    
+                elif data_initial:
+                    query = """
+                    SELECT * FROM banco_horas
+                    WHERE funcionario_id = ?
+                    AND data = ?
+                    """
+                    params = (employee_id, data_initial)
+                    
+                else:
+                    query = """
+                    SELECT * FROM banco_horas
+                    WHERE funcionario_id = ?
+                    """
+                    params = (employee_id,)
+                    
+                if not data_initial:
+                    query += "ORDER BY data DESC LIMIT 10"
+                else:
+                    query += "ORDER BY data DESC"
+                self.cursor.execute(query, params)    
                 rows = self.cursor.fetchall()
                 return rows
             except sqlite3.Error as e:
-                messagebox.showerror("Erro", f"Erro ao listar pontos:\n {e}") 
+                messagebox.showerror("Erro", f"Erro ao listar pontos:\n {e}")
+            except ValueError as e:
+                messagebox.showerror("Erro", str(e))
         else:
             messagebox.showerror("Erro", f"Nenhuma conexão ativa para listar pontos.")
             
