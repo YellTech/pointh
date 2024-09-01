@@ -62,13 +62,22 @@ class Manager:
         employees = self.db.get_all_employee()
         return employees
     
-    def handle_add_point(self, funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia):
-        entrys = [funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia]
-        for i in entrys:
-            if i:
-                return
-            else:
-                messagebox.showerror("Erro", "Preencha todos os campos.")
+    def handle_add_point(self, funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3):
+        dados = [funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3]
+        check = True
+        for i in dados:
+            if not i:
+                check = False
+        if check:
+            entrys_time = [entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3]
+            entrys_minutes = []
+            for i in entrys_time:
+                i = self.time_to_minute(i)
+                entrys_minutes.append(i)
+
+            
+        else:
+             messagebox.showerror("Erro", "Selecione um funcionário e preencha todos os campos.")
     
     def get_point_employee(self, employee_id):
         """
@@ -85,3 +94,20 @@ class Manager:
         entrys = self.db.get_all_entry(employee_id)
         entrys = [tuple(tupla[i] for i in indices) for tupla in entrys]
         return entrys
+    
+    def time_to_minute(self, time_str):
+        hour, minute = map(int, time_str.split(":"))
+        return hour * 60 + minute
+    
+    def minutes_to_time(self, minutes):
+        hours = minutes // 60
+        minutes = minutes % 60
+        return f"{hours:02}:{minutes:02}"
+    
+    def valid_time_entry(self, start_time, end_time):
+        start_minutes = self.time_to_minute(start_time)
+        end_minutes = self.time_to_minute(end_time)
+        if start_minutes > end_minutes:
+            return False
+        else:
+            return True

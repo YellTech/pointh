@@ -119,7 +119,8 @@ class View(ThemedTk):
         self.employee_label = ttk.Label(self.frame_ponto, text="Selecione um funcionário", foreground="red", font="bold")
         self.employee_label.grid(row=0, column=0, columnspan=2, sticky="ew", pady=5, padx=5)
         # Entradas para os pontos (Entrada 1, Saída 1, etc.)
-        self.entry_data = DateEntry(self.frame_ponto, date_pattern='dd/mm/YYYY').grid(row=1, column=0, sticky="ew", pady=5, padx=5)
+        self.entry_data = DateEntry(self.frame_ponto, date_pattern='dd/mm/YYYY')
+        self.entry_data.grid(row=1, column=0, sticky="ew", pady=5, padx=5)
         ttk.Label(self.frame_ponto, text="Entrada 1").grid(row=2, column=0, sticky="w", pady=1, padx=(0, 30))
         ttk.Label(self.frame_ponto, text="Saída 1").grid(row=2, column=1, sticky="w", pady=1)
         ttk.Label(self.frame_ponto, text="Entrada 2").grid(row=4, column=0, sticky="w", pady=1, padx=(0, 30))
@@ -235,7 +236,10 @@ class View(ThemedTk):
             messagebox.showerror("Erro", "Selecione um funcionário para deletar.")
     
     def add_point(self):
-        print(self.entry_saida_3.get())
+        self.manager.handle_add_point(self.employee_id, self.entry_data.get(),
+                                      self.entry_entrada_1.get(), self.entry_saida_1.get(),
+                                      self.entry_entrada_2.get(), self.entry_saida_2.get(),
+                                      self.entry_entrada_3.get(), self.entry_saida_3.get())
     
     def update_point(self):
         pass
@@ -320,17 +324,17 @@ class View(ThemedTk):
             if int(digits[:2]) < 24 and int(digits[2:]) < 60 :
                 formatted_time = f"{digits[:2]}:{digits[2:]}"
             else:
-                formatted_time = f"Hora inválida"
+                formatted_time = f""
         elif len(digits) == 3:
             if int(digits[:1]) < 24 and int(digits[1:]) < 60:
                 formatted_time = f"0{digits[:1]}:{digits[1:]}"
             else:
-                formatted_time = f"Hora inválida"
+                formatted_time = f""
         elif len(digits) == 2:
             if int(digits[:2]) < 24:
                 formatted_time = f"{digits[:2]}:00"
             else:
-                formatted_time = f"Hora inválida"
+                formatted_time = f""
         elif len(digits) == 1:
             formatted_time = f"0{digits[:1]}:00"
         else:
