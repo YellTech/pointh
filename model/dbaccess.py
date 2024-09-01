@@ -343,6 +343,22 @@ class DbAccess:
         else:
             messagebox.showerror("Erro", f"Nenhuma conexão ativa para listar pontos.")
             
+    def verify_entry_date(self, funcionario_id, data):
+        if self.conn:
+            try:
+                self.cursor.execute("""
+                SELECT COUNT(1) FROM banco_horas WHERE funcionario_id = ? AND data = ?
+                """, (funcionario_id, data))
+                result = self.cursor.fetchone()
+                if result[0]>0:
+                    return True
+                else:
+                    return False
+            except sqlite3.Error as e:
+                messagebox.showerror("Erro", f"Erro ao listar entrada de ponto:\n {e}") 
+        else:
+            messagebox.showerror("Erro", f"Nenhuma conexão ativa para listar entrada de ponto.") 
+            
     def close_connection(self):
         """
         The `close_connection` function closes the connection if it exists, otherwise it shows an error

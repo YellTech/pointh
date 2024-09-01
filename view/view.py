@@ -277,6 +277,7 @@ class View(ThemedTk):
         ttk.Label(top, text="Carga Horária:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
         self.entry_carga_horaria = ttk.Entry(top)
         self.entry_carga_horaria.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+        self.entry_carga_horaria.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_carga_horaria))
         
         self.load_config()
         self.entry_carga_horaria.insert(0, self.carga_horaria)

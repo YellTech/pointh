@@ -1,5 +1,6 @@
 from model.dbaccess import DbAccess
 from tkinter import messagebox
+import json
 
 class Manager:
     def __init__(self) -> None:
@@ -74,10 +75,22 @@ class Manager:
             for i in entrys_time:
                 i = self.time_to_minute(i)
                 entrys_minutes.append(i)
-
-            
+            for i in range(0, len(entrys_minutes), 2):
+                primeiro = entrys_minutes[i]
+                segundo = entrys_minutes[i+1]
+                if primeiro > segundo:
+                    messagebox.showerror("Erro", "Revise as entrada:\nValor da entrada maior que valor da saida.")
+                    return
+            if not self.db.verify_entry_date(funcionario_id, data):
+                self.db.add_time_entry(funcionario_id, data, entrys_minutes[0], entrys_minutes[1], entrys_minutes[2],
+                                    entrys_minutes[3], entrys_minutes[4], entrys_minutes[5], 
+                                    self.total_add_point(entrys_minutes), self.load_config_workload(),
+                                    self.total_add_point(entrys_minutes) - self.load_config_workload())  
+            else:
+                messagebox.showerror("Erro", f"O funcionário ID: {funcionario_id}\nJá tem ponto adicionado com a data: {data}")            
         else:
              messagebox.showerror("Erro", "Selecione um funcionário e preencha todos os campos.")
+             return
     
     def get_point_employee(self, employee_id):
         """
@@ -103,11 +116,21 @@ class Manager:
         hours = minutes // 60
         minutes = minutes % 60
         return f"{hours:02}:{minutes:02}"
-    
-    def valid_time_entry(self, start_time, end_time):
-        start_minutes = self.time_to_minute(start_time)
-        end_minutes = self.time_to_minute(end_time)
-        if start_minutes > end_minutes:
-            return False
-        else:
-            return True
+        
+    def load_config_workload(self):
+        self.config_file = "config.json"
+        with open(self.config_file, "r") as file:
+            config = json.load(file)
+            self.carga_horaria = config.get("carga_horaria", "")
+            self.carga_horaria = self.time_to_minute(self.carga_horaria)
+            print(self.carga_horaria)
+            return self.carga_horaria
+        
+    def total_add_point(self, entrys):
+        total = 0
+        for i in range(0, len(entrys), 2):
+            primeiro = entrys[i]
+            segundo = entrys[i+1]
+            total = total + (segundo - primeiro)
+        return int(total)
+            
