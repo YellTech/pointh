@@ -242,8 +242,11 @@ class View(ThemedTk):
         entrys_points = [self.employee_id, self.entry_data.get(), self.entry_entrada_1.get(), self.entry_saida_1.get(),
                                       self.entry_entrada_2.get(), self.entry_saida_2.get(), self.entry_entrada_3.get(),
                                       self.entry_saida_3.get()]
-        self.manager.handle_add_point(entrys_points)
-        self.update_treeviews_by_id(2)
+        result = self.manager.handle_add_point(entrys_points)
+        if result:
+            self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
+                               self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
+            self.update_treeviews_by_id(2)
     
     def update_point(self):
         pass
@@ -358,6 +361,10 @@ class View(ThemedTk):
         
         # Move o cursor para o final da entrada
         entry_widget.icursor('end')
+
+    def clear_entrys(self, entrys):
+        for i in entrys:
+            i.delete(0, tk.END)
 
 if __name__ == "__main__":
     app = View()

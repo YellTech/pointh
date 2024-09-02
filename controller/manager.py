@@ -100,11 +100,12 @@ class Manager:
                     messagebox.showerror("Erro", "Revise as entrada:\nValor da entrada maior que valor da saida.")
                     return
             if not self.db.verify_entry_date(entrys_data[0], self.convert_to_sql_date(entrys_data[1])):
-                self.db.add_time_entry(entrys_data[0], self.convert_to_sql_date(entrys_data[1]), entrys_time[0], entrys_time[1], entrys_time[2],
-                                    entrys_time[3], entrys_time[4], entrys_time[5], 
-                                    self.minutes_to_time(self.total_add_point(entrys_minutes)),
-                                    self.minutes_to_time(self.load_config_workload()),
-                                    self.minutes_to_time(self.total_add_point(entrys_minutes) - self.load_config_workload()))  
+                result = self.db.add_time_entry(entrys_data[0], self.convert_to_sql_date(entrys_data[1]), entrys_time[0], entrys_time[1], entrys_time[2],
+                                                entrys_time[3], entrys_time[4], entrys_time[5], 
+                                                self.minutes_to_time(self.total_add_point(entrys_minutes)),
+                                                self.minutes_to_time(self.load_config_workload()),
+                                                self.minutes_to_time(self.total_add_point(entrys_minutes) - self.load_config_workload())) 
+                return result 
             else:
                 messagebox.showerror("Erro", f"O funcionário ID: {entrys_data[0]}\nJá tem ponto adicionado com a data: {entrys_data[1]}")            
         else:

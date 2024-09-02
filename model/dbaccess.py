@@ -244,6 +244,7 @@ class DbAccess:
 
                 self.conn.commit()
                 messagebox.showinfo("Atenção", f"Ponto adicionado com sucesso.")
+                return True
             except sqlite3.Error as e:
                 messagebox.showerror("Erro", f"Erro ao adicionar ponto:\n {e}")
         else:
