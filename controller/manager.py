@@ -104,12 +104,13 @@ class Manager:
                                                 entrys_time[3], entrys_time[4], entrys_time[5], 
                                                 self.minutes_to_time(self.total_add_point(entrys_minutes)),
                                                 self.minutes_to_time(self.load_config_workload()),
-                                                self.minutes_to_time(self.total_add_point(entrys_minutes) - self.load_config_workload())) 
+                                                self.minutes_to_time(self.total_add_point(entrys_minutes) - self.load_config_workload()), entrys_data[8]) 
                 return result 
             else:
                 messagebox.showerror("Erro", f"O funcionário ID: {entrys_data[0]}\nJá tem ponto adicionado com a data: {entrys_data[1]}")            
         else:
             if entrys_data[0] == 0:
+                messagebox.showerror("Erro", "Selecione um funcionário antes de adicionar o ponto.")
                 return
             else:
                 messagebox.showerror("Erro", "Preencha todos os campos.")
@@ -140,7 +141,12 @@ class Manager:
         entrys = [tuple(tupla[i] for i in indices) for tupla in entrys]
         entrys = self.convert_dates_in_tuples(entrys)
         return entrys
-        
+ 
+    def handle_get_point_tree(self, point_id, employee_id):
+        point = self.db.get_point_tree(point_id, employee_id)
+        point = self.convert_dates_in_tuples(point, [2])
+        return point[0]
+    
     def time_to_minute(self, time_str):
         """
         The function `time_to_minute` converts a time string in the format "HH:MM" to the total number

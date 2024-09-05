@@ -63,6 +63,7 @@ class DbAccess:
                     total INTEGER NOT NULL,
                     carga_dia INTEGER NOT NULL,
                     saldo_dia INTEGER NOT NULL,
+                    presenca TEXT NOT NULL,
                     FOREIGN KEY (funcionario_id) REFERENCES funcionarios(id) ON DELETE CASCADE
                 )                    
                 """)
@@ -185,11 +186,11 @@ class DbAccess:
                 rows = self.cursor.fetchall()
                 return rows
             except sqlite3.Error as e:
-                messagebox.showerror("Erro", f"Erro ao listar Funcionário:\n {e}") 
+                messagebox.showerror("Erro", f"Erro ao resgatar dados de ponto:\n {e}") 
         else:
-            messagebox.showerror("Erro", f"Nenhuma conexão ativa para listar funcionário.")
+            messagebox.showerror("Erro", f"Nenhuma conexão ativa para resgatar dados de ponto.")
                 
-    def add_time_entry(self, funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia):
+    def add_time_entry(self, funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia, presenca):
         """
         This Python function adds a time entry record to a database table with error handling for SQLite
         operations.
@@ -237,9 +238,9 @@ class DbAccess:
         if self.conn:
             try:
                 self.cursor.execute("""
-                INSERT INTO banco_horas (funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia)                    
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia)
+                INSERT INTO banco_horas (funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia, presenca)                    
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (funcionario_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia, presenca)
                 )
 
                 self.conn.commit()
@@ -250,7 +251,7 @@ class DbAccess:
         else:
             messagebox.showerror("Erro", f"Nenhuma conexão ativa para adicionar ponto.")
 
-    def update_time_entry(self, entry_id, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia):
+    def update_time_entry(self, entry_id, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia, presenca):
         """
         This Python function updates a time entry in a database table with the provided entry ID and
         time values.
@@ -292,9 +293,9 @@ class DbAccess:
             try:
                 self.cursor.execute("""
                 UPDATE banco_horas
-                SET entrada_1 = ?, saida_1 = ?, entrada_2 = ?, saida_2 = ?, entrada_3 = ?, saida_3 = ?, total = ?, carga_dia = ?, saldo_dia = ?
+                SET entrada_1 = ?, saida_1 = ?, entrada_2 = ?, saida_2 = ?, entrada_3 = ?, saida_3 = ?, total = ?, carga_dia = ?, saldo_dia = ?, presenca = ?
                 WHERE id = ?
-                """, (entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia, entry_id))
+                """, (entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia, presenca, entry_id))
                 
                 self.conn.commit()
                 messagebox.showinfo("Atenção", f"Ponto atualizado com sucesso.")
@@ -364,7 +365,21 @@ class DbAccess:
                 messagebox.showerror("Erro", str(e))
         else:
             messagebox.showerror("Erro", f"Nenhuma conexão ativa para listar pontos.")
-            
+    
+    def get_point_tree(self, point_id, employee_id):
+        if self.conn:
+            try:
+                self.cursor.execute("""
+                SELECT * FROM banco_horas WHERE id = ? AND funcionario_id = ?
+                """, (point_id, employee_id))
+                
+                rows = self.cursor.fetchall()
+                return rows
+            except sqlite3.Error as e:
+                messagebox.showerror("Erro", f"Erro ao regatar ponto:\n {e}")
+        else:
+            messagebox.showerror("Erro", f"Nenhuma conexão ativa para resgatar ponto.")
+                        
     def verify_entry_date(self, funcionario_id, data):
         if self.conn:
             try:
