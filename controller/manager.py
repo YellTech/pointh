@@ -25,6 +25,7 @@ class Manager:
         database using the
         """
         if name:
+            name = name.upper()
             if not self.db.verify_employee(name):
                 self.db.add_employee(name)
             else:
@@ -47,6 +48,7 @@ class Manager:
         `new_name` is different from the current name of the employee, the function will update the
         employee's name in the database
         """
+        new_name = new_name.upper()
         if name != new_name:
             self.db.update_employee(id, new_name)
         else:
@@ -115,6 +117,37 @@ class Manager:
             else:
                 messagebox.showerror("Erro", "Preencha todos os campos.")
                 return
+    
+    def handle_update_point(self, entrys_data_update):
+        check = True
+        for i in entrys_data_update:
+            if not i:
+                check = False
+        if check:
+            entrys_time = [entrys_data_update[2], entrys_data_update[3], entrys_data_update[4], entrys_data_update[5], entrys_data_update[6], entrys_data_update[7]]
+            entrys_minutes = []
+            for i in entrys_time:
+                i = self.time_to_minute(i)
+                entrys_minutes.append(i)
+            for i in range(0, len(entrys_minutes), 2):
+                primeiro = entrys_minutes[i]
+                segundo = entrys_minutes[i+1]
+                if primeiro > segundo:
+                    messagebox.showerror("Erro", "Revise as entrada:\nValor da entrada maior que valor da saida.")
+                    return
+                
+            result = self.db.update_time_entry(entrys_data_update[0], self.convert_to_sql_date(entrys_data_update[1]), entrys_time[0], entrys_time[1], entrys_time[2],
+                                            entrys_time[3], entrys_time[4], entrys_time[5], 
+                                            self.minutes_to_time(self.total_add_point(entrys_minutes)),
+                                            self.minutes_to_time(self.load_config_workload()),
+                                            self.minutes_to_time(self.total_add_point(entrys_minutes) - self.load_config_workload()), entrys_data_update[8]) 
+            return result           
+        else:
+            messagebox.showerror("Erro", "Preencha todos os campos.")
+            return
+    
+    def handle_delete_point(self, id):
+        self.db.delete_time_entry(id)
     
     def get_point_employee(self, employee_id, data_initial=None, data_end = None):
         """
@@ -197,9 +230,13 @@ class Manager:
         hours and minutes format. It then returns a string in the format "HH:MM" where HH represents the
         hours and MM represents the minutes.
         """
+        sign = "-" if minutes < 0 else ""
+        
+        minutes = abs(minutes)
+        
         hours = minutes // 60
         minutes = minutes % 60
-        return f"{hours:02}:{minutes:02}"
+        return f"{sign}{hours:02}:{minutes:02}"
         
     def load_config_workload(self):
         """
@@ -233,5 +270,6 @@ class Manager:
             primeiro = entrys[i]
             segundo = entrys[i+1]
             total = total + (segundo - primeiro)
+        print(f"Total trabalhado: {int(total)}")
         return int(total)
             

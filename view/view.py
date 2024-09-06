@@ -16,6 +16,7 @@ class View(ThemedTk):
         self.config_file = "config.json"
         self.manager = Manager()
         self.employee_id = 0
+        self.id_point = 0
         
         self.title("Controle de Ponto")
         self.geometry("1024x720")
@@ -127,12 +128,12 @@ class View(ThemedTk):
         self.presence_box.current(0)
         self.presence_box.grid(row=1, column=1, sticky="w", pady=5)
         
-        ttk.Label(self.frame_ponto, text="Entrada 1").grid(row=3, column=0, sticky="w", pady=1, padx=(0, 30))
-        ttk.Label(self.frame_ponto, text="Saída 1").grid(row=3, column=1, sticky="w", pady=1)
-        ttk.Label(self.frame_ponto, text="Entrada 2").grid(row=5, column=0, sticky="w", pady=1, padx=(0, 30))
-        ttk.Label(self.frame_ponto, text="Saída 2").grid(row=5, column=1, sticky="w", pady=1)
-        ttk.Label(self.frame_ponto, text="Entrada 3").grid(row=7, column=0, sticky="w", pady=1, padx=(0, 30))
-        ttk.Label(self.frame_ponto, text="Saída 3").grid(row=7, column=1, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Entrada 1").grid(row=2, column=0, sticky="w", pady=1, padx=(0, 30))
+        ttk.Label(self.frame_ponto, text="Saída 1").grid(row=2, column=1, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Entrada 2").grid(row=4, column=0, sticky="w", pady=1, padx=(0, 30))
+        ttk.Label(self.frame_ponto, text="Saída 2").grid(row=4, column=1, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Entrada 3").grid(row=6, column=0, sticky="w", pady=1, padx=(0, 30))
+        ttk.Label(self.frame_ponto, text="Saída 3").grid(row=6, column=1, sticky="w", pady=1)
 
         # Entradas e saídas
         self.entry_entrada_1 = ttk.Entry(self.frame_ponto)
@@ -144,12 +145,12 @@ class View(ThemedTk):
 
         # Posicionar as entradas e saídas com grid
         
-        self.entry_entrada_1.grid(row=4, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
-        self.entry_saida_1.grid(row=4, column=1, sticky="ew", pady=(1, 10))
-        self.entry_entrada_2.grid(row=6, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
-        self.entry_saida_2.grid(row=6, column=1, sticky="ew", pady=(1, 10))
-        self.entry_entrada_3.grid(row=8, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
-        self.entry_saida_3.grid(row=8, column=1, sticky="ew", pady=(1, 10))
+        self.entry_entrada_1.grid(row=3, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
+        self.entry_saida_1.grid(row=3, column=1, sticky="ew", pady=(1, 10))
+        self.entry_entrada_2.grid(row=5, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
+        self.entry_saida_2.grid(row=5, column=1, sticky="ew", pady=(1, 10))
+        self.entry_entrada_3.grid(row=7, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
+        self.entry_saida_3.grid(row=7, column=1, sticky="ew", pady=(1, 10))
         
         # Binds entrys
         self.entry_entrada_1.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_entrada_1))
@@ -161,11 +162,11 @@ class View(ThemedTk):
         
         # Botôes para ponto
         self.btn_adicionar_ponto = ttk.Button(self.frame_ponto, text="Adicionar", command=self.add_point)
-        self.btn_adicionar_ponto.grid(row=9, column=0, columnspan=2, sticky="ew", pady=2)
+        self.btn_adicionar_ponto.grid(row=8, column=0, columnspan=2, sticky="ew", pady=2)
         self.btn_edit_point = ttk.Button(self.frame_ponto, text="Editar", command=self.update_point)
-        self.btn_edit_point.grid(row=10, column=0, columnspan=2, sticky="ew", pady=2)
+        self.btn_edit_point.grid(row=9, column=0, columnspan=2, sticky="ew", pady=2)
         self.btn_delete_point = ttk.Button(self.frame_ponto, text="Deletar", command=self.delete_point)
-        self.btn_delete_point.grid(row=11, column=0, columnspan=2, sticky="ew", pady=2)
+        self.btn_delete_point.grid(row=10, column=0, columnspan=2, sticky="ew", pady=2)
     
     def create_treeview_components(self):
         # Entradas para intervalo de datas
@@ -206,6 +207,7 @@ class View(ThemedTk):
             item = self.tree_pontos.selection()[0]
             value = self.tree_pontos.item(item, 'values')
             point = self.manager.handle_get_point_tree(value[0], self.employee_id)
+            self.id_point = value[0]
             self.entry_data.delete(0, tk.END)
             self.entry_data.insert(0, point[2])
             presence_map = {"NORMAL": 0, "FALTOU": 1, "ATESTADO": 2}
@@ -213,17 +215,16 @@ class View(ThemedTk):
                 index = presence_map[point[12]]
                 if index < len(self.presence_box["values"]):
                     self.presence_box.current(index)
-            
             self.entry_entrada_1.delete(0, tk.END)
             self.entry_entrada_1.insert(0, point[3])
-            self.entry_entrada_2.delete(0, tk.END)
-            self.entry_entrada_2.insert(0, point[4])
-            self.entry_entrada_3.delete(0, tk.END)
-            self.entry_entrada_3.insert(0, point[5])
             self.entry_saida_1.delete(0, tk.END)
-            self.entry_saida_1.insert(0, point[6])
+            self.entry_saida_1.insert(0, point[4])
+            self.entry_entrada_2.delete(0, tk.END)
+            self.entry_entrada_2.insert(0, point[5])
             self.entry_saida_2.delete(0, tk.END)
-            self.entry_saida_2.insert(0, point[7])
+            self.entry_saida_2.insert(0, point[6])
+            self.entry_entrada_3.delete(0, tk.END)
+            self.entry_entrada_3.insert(0, point[7])
             self.entry_saida_3.delete(0, tk.END)
             self.entry_saida_3.insert(0, point[8])
         except:
@@ -242,6 +243,7 @@ class View(ThemedTk):
             self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
                                self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
             self.update_treeviews_by_id(2)
+            self.presence_box_reset()
         except:
             pass
     
@@ -260,6 +262,8 @@ class View(ThemedTk):
                 self.entry_nome.delete(0, tk.END)
                 self.employee_id = None
                 self.label_selected_employee()
+                self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
+                               self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
                 self.update_treeviews_by_id(1)
         elif self.employee_id:
             messagebox.showerror("Erro", "O nome nao pode ser vazio.")
@@ -275,6 +279,10 @@ class View(ThemedTk):
                 self.employee_id = None
                 self.label_selected_employee()
                 self.update_treeviews_by_id(1)
+                self.update_treeviews_by_id(2)
+                self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
+                               self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
+                self.presence_box_reset()
         else:
             messagebox.showerror("Erro", "Selecione um funcionário para deletar.")
     
@@ -287,12 +295,32 @@ class View(ThemedTk):
             self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
                                self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
             self.update_treeviews_by_id(2)
+            self.presence_box_reset()
     
     def update_point(self):
-        pass
+        entrys_point_update = [self.id_point, self.entry_data.get(), self.entry_entrada_1.get(), self.entry_saida_1.get(),
+                                      self.entry_entrada_2.get(), self.entry_saida_2.get(), self.entry_entrada_3.get(),
+                                      self.entry_saida_3.get(), self.presence_box.get()]
+        result = self.manager.handle_update_point(entrys_point_update)
+        if result:
+            self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
+                               self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
+            self.update_treeviews_by_id(2)
+            self.presence_box_reset()
     
     def delete_point(self):
-        pass 
+        if self.id_point:
+            alert =  messagebox.askyesno("Atenção", f"Deseja mesmo deletar o ponto com o ID:\n\n{self.id_point}")
+            if alert:
+                self.manager.handle_delete_point(self.id_point)
+                self.entry_nome.delete(0, tk.END)
+                self.id_point = None
+                self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
+                               self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
+                self.update_treeviews_by_id(2)
+                self.presence_box_reset()
+        else:
+            messagebox.showerror("Erro", "Selecione um ponto para deletar.") 
 
     def filter_treeview_point(self):
         self.update_treeviews_by_id(2, self.entry_data_inicio.get(), self.entry_data_fim.get())
@@ -402,6 +430,8 @@ class View(ThemedTk):
         # Move o cursor para o final da entrada
         entry_widget.icursor('end')
 
+    def presence_box_reset(self):
+        self.presence_box.current(0)
     def clear_entrys(self, entrys):
         for i in entrys:
             i.delete(0, tk.END)

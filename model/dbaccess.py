@@ -29,6 +29,7 @@ class DbAccess:
         """
         try:
             conn = sqlite3.connect(self.db_name)
+            conn.execute("PRAGMA foreign_keys = ON")
             return conn
         except sqlite3.Error as e:
             messagebox.showerror("Erro", f"Erro ao conectar ao banco de dados:\n {e}")
@@ -54,15 +55,15 @@ class DbAccess:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     funcionario_id INTEGER,
                     data  DATE NOT NULL,
-                    entrada_1 INTEGER NOT NULL,
-                    saida_1 INTEGER NOT NULL,
-                    entrada_2 INTEGER NOT NULL,
-                    saida_2 INTEGER NOT NULL,
-                    entrada_3 INTEGER NOT NULL,
-                    saida_3 INTEGER NOT NULL,
-                    total INTEGER NOT NULL,
-                    carga_dia INTEGER NOT NULL,
-                    saldo_dia INTEGER NOT NULL,
+                    entrada_1 TEXT NOT NULL,
+                    saida_1 TEXT NOT NULL,
+                    entrada_2 TEXT NOT NULL,
+                    saida_2 TEXT NOT NULL,
+                    entrada_3 TEXT NOT NULL,
+                    saida_3 TEXT NOT NULL,
+                    total TEXT NOT NULL,
+                    carga_dia TEXT NOT NULL,
+                    saldo_dia TEXT NOT NULL,
                     presenca TEXT NOT NULL,
                     FOREIGN KEY (funcionario_id) REFERENCES funcionarios(id) ON DELETE CASCADE
                 )                    
@@ -251,7 +252,7 @@ class DbAccess:
         else:
             messagebox.showerror("Erro", f"Nenhuma conexão ativa para adicionar ponto.")
 
-    def update_time_entry(self, entry_id, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia, presenca):
+    def update_time_entry(self, entry_id, data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia, presenca):
         """
         This Python function updates a time entry in a database table with the provided entry ID and
         time values.
@@ -293,12 +294,13 @@ class DbAccess:
             try:
                 self.cursor.execute("""
                 UPDATE banco_horas
-                SET entrada_1 = ?, saida_1 = ?, entrada_2 = ?, saida_2 = ?, entrada_3 = ?, saida_3 = ?, total = ?, carga_dia = ?, saldo_dia = ?, presenca = ?
+                SET data = ?, entrada_1 = ?, saida_1 = ?, entrada_2 = ?, saida_2 = ?, entrada_3 = ?, saida_3 = ?, total = ?, carga_dia = ?, saldo_dia = ?, presenca = ?
                 WHERE id = ?
-                """, (entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia, presenca, entry_id))
+                """, (data, entrada_1, saida_1, entrada_2, saida_2, entrada_3, saida_3, total, carga_dia, saldo_dia, presenca, entry_id))
                 
                 self.conn.commit()
                 messagebox.showinfo("Atenção", f"Ponto atualizado com sucesso.")
+                return True
             except sqlite3.Error as e:
                 messagebox.showerror("Erro", f"Erro ao atualizar ponto:\n {e}")
         else:
