@@ -2,7 +2,6 @@ from model.dbaccess import DbAccess
 from tkinter import messagebox
 import json
 
-
 # The `Manager` class in Python contains methods for managing employees and time entries in a
 # database, handling operations such as adding, updating, deleting employees, and processing time
 # entries.
@@ -73,7 +72,7 @@ class Manager:
         employees = self.db.get_all_employee()
         return employees
     
-    def handle_add_point(self, entrys_data):
+    def handle_add_point(self, entrys_data, flag_presence):
         """
         The function `handle_add_point` checks and processes time entries for a specific employee,
         displaying errors for invalid entries.
@@ -106,7 +105,11 @@ class Manager:
                                                 entrys_time[3], entrys_time[4], entrys_time[5], 
                                                 self.minutes_to_time(self.total_add_point(entrys_minutes)),
                                                 self.minutes_to_time(self.load_config_workload()),
-                                                self.minutes_to_time(self.total_add_point(entrys_minutes) - self.load_config_workload()), entrys_data[8]) 
+                                                (self.minutes_to_time(self.total_add_point(entrys_minutes) - self.load_config_workload())) if not flag_presence
+                                                else f"-{self.minutes_to_time(self.load_config_workload())}" if flag_presence == 1
+                                                else f"{self.minutes_to_time(self.load_config_workload())}" if flag_presence == 2
+                                                else "ERRO"
+                                                , entrys_data[8]) 
                 return result 
             else:
                 messagebox.showerror("Erro", f"O funcionário ID: {entrys_data[0]}\nJá tem ponto adicionado com a data: {entrys_data[1]}")            
@@ -160,7 +163,7 @@ class Manager:
         points for a given employee. The data points are extracted from the entries retrieved from the
         database for the specified employee ID.
         """
-        indices = [0, 2, 9, 11]
+        indices = [0, 2, 9, 11, 12]
         entrys = self.db.get_all_entry(employee_id, self.convert_to_sql_date(data_initial), self.convert_to_sql_date(data_end))
         if not entrys:
             if employee_id == 0:
@@ -270,6 +273,7 @@ class Manager:
             primeiro = entrys[i]
             segundo = entrys[i+1]
             total = total + (segundo - primeiro)
-        print(f"Total trabalhado: {int(total)}")
         return int(total)
-            
+   
+    def close_connection_manager(self):
+        self.db.close_connection()         

@@ -8,6 +8,8 @@ import datetime
 import json
 import os
 import re
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class View(ThemedTk):
     def __init__(self, theme="radiance"):
@@ -17,6 +19,8 @@ class View(ThemedTk):
         self.manager = Manager()
         self.employee_id = 0
         self.id_point = 0
+        self.presence_flag = None
+        self.protocol("WM_DELETE_WINDOW", self.close_destroy)
         
         self.title("Controle de Ponto")
         self.geometry("1024x720")
@@ -98,6 +102,8 @@ class View(ThemedTk):
         self.entry_nome.grid(row=1, column=0, sticky="ew", pady=5)
         
         # Treeview para listar funcionários
+        style = ttk.Style()
+        style.configure("Treeview", font=("TkDefaultFont", 9))
         self.tree_funcionarios = ttk.Treeview(self.frame_funcionarios, columns=("ID", "Nome"), show="headings")
         self.tree_funcionarios.heading("ID", text="ID")
         self.tree_funcionarios.heading("Nome", text="Nome")
@@ -118,22 +124,23 @@ class View(ThemedTk):
         self.btn_deletar.grid(row=5, column=0, sticky="ew", padx=5, pady=2)
     
     def create_ponto_components(self):
-        self.employee_label = ttk.Label(self.frame_ponto, text="Selecione um funcionário", foreground="red", font="bold")
+        self.employee_label = ttk.Label(self.frame_ponto, text="Selecione um funcionário", foreground="red")
         self.employee_label.grid(row=0, column=0, columnspan=2, sticky="ew", pady=5, padx=5)
         # Entradas para os pontos (Entrada 1, Saída 1, etc.)
         self.entry_data = DateEntry(self.frame_ponto, date_pattern='dd-mm-YYYY')
-        self.entry_data.grid(row=1, column=0, sticky="w", pady=5, padx=(0, 30))
-        self.presence_box = ttk.Combobox(self.frame_ponto, state="readonly", font=("TkDefaultFont", 10, "bold" ))
+        self.entry_data.grid(row=1, column=0, sticky="ew", pady=5, padx=(0, 15))
+        self.presence_box = ttk.Combobox(self.frame_ponto, state="readonly")
         self.presence_box['values'] = ("NORMAL", "FALTOU", "ATESTADO")
         self.presence_box.current(0)
-        self.presence_box.grid(row=1, column=1, sticky="w", pady=5)
+        self.presence_box.grid(row=1, column=1, sticky="ew", pady=5, padx=(15, 0))
+        self.presence_box.bind("<<ComboboxSelected>>", lambda event: self.presence_selected())
         
-        ttk.Label(self.frame_ponto, text="Entrada 1").grid(row=2, column=0, sticky="w", pady=1, padx=(0, 30))
-        ttk.Label(self.frame_ponto, text="Saída 1").grid(row=2, column=1, sticky="w", pady=1)
-        ttk.Label(self.frame_ponto, text="Entrada 2").grid(row=4, column=0, sticky="w", pady=1, padx=(0, 30))
-        ttk.Label(self.frame_ponto, text="Saída 2").grid(row=4, column=1, sticky="w", pady=1)
-        ttk.Label(self.frame_ponto, text="Entrada 3").grid(row=6, column=0, sticky="w", pady=1, padx=(0, 30))
-        ttk.Label(self.frame_ponto, text="Saída 3").grid(row=6, column=1, sticky="w", pady=1)
+        ttk.Label(self.frame_ponto, text="Entrada 1").grid(row=2, column=0, sticky="ew", pady=1, padx=(0, 15))
+        ttk.Label(self.frame_ponto, text="Saída 1").grid(row=2, column=1, sticky="ew", pady=1, padx=(15, 0))
+        ttk.Label(self.frame_ponto, text="Entrada 2").grid(row=4, column=0, sticky="ew", pady=1, padx=(0, 15))
+        ttk.Label(self.frame_ponto, text="Saída 2").grid(row=4, column=1, sticky="ew", pady=1, padx=(15, 0))
+        ttk.Label(self.frame_ponto, text="Entrada 3").grid(row=6, column=0, sticky="ew", pady=1, padx=(0, 15))
+        ttk.Label(self.frame_ponto, text="Saída 3").grid(row=6, column=1, sticky="ew", pady=1, padx=(15, 0))
 
         # Entradas e saídas
         self.entry_entrada_1 = ttk.Entry(self.frame_ponto)
@@ -145,12 +152,12 @@ class View(ThemedTk):
 
         # Posicionar as entradas e saídas com grid
         
-        self.entry_entrada_1.grid(row=3, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
-        self.entry_saida_1.grid(row=3, column=1, sticky="ew", pady=(1, 10))
-        self.entry_entrada_2.grid(row=5, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
-        self.entry_saida_2.grid(row=5, column=1, sticky="ew", pady=(1, 10))
-        self.entry_entrada_3.grid(row=7, column=0, sticky="ew", pady=(1, 10), padx=(0, 30))
-        self.entry_saida_3.grid(row=7, column=1, sticky="ew", pady=(1, 10))
+        self.entry_entrada_1.grid(row=3, column=0, sticky="ew", pady=(1, 10), padx=(0, 15))
+        self.entry_saida_1.grid(row=3, column=1, sticky="ew", pady=(1, 10), padx=(15, 0))
+        self.entry_entrada_2.grid(row=5, column=0, sticky="ew", pady=(1, 10), padx=(0, 15))
+        self.entry_saida_2.grid(row=5, column=1, sticky="ew", pady=(1, 10), padx=(15, 0))
+        self.entry_entrada_3.grid(row=7, column=0, sticky="ew", pady=(1, 10), padx=(0, 15))
+        self.entry_saida_3.grid(row=7, column=1, sticky="ew", pady=(1, 10), padx=(15, 0))
         
         # Binds entrys
         self.entry_entrada_1.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_entrada_1))
@@ -181,27 +188,78 @@ class View(ThemedTk):
         self.btn_filtrar.grid(row=1, column=2, sticky="ew", padx=5)
         
         # Treeview para exibir pontos do funcionário selecionado
-        self.tree_pontos = ttk.Treeview(self.frame_treeview, columns=("ID", "Data", "Total", "Saldo"), show="headings")
+        self.tree_pontos = ttk.Treeview(self.frame_treeview, columns=("ID", "Data", "Total", "Saldo", "Status"), show="headings")
         self.tree_pontos.heading("ID", text="ID")
         self.tree_pontos.heading("Data", text="Data")
         self.tree_pontos.heading("Total", text="Total")
         self.tree_pontos.heading("Saldo", text="Saldo")
+        self.tree_pontos.heading("Status", text="Status")
         self.tree_pontos.column("ID", anchor="center", width=30)
-        self.tree_pontos.column("Data", anchor="center", width=140)
-        self.tree_pontos.column("Total", anchor="center", width=140)
-        self.tree_pontos.column("Saldo", anchor="center", width=140)
+        self.tree_pontos.column("Data", anchor="center", width=105)
+        self.tree_pontos.column("Total", anchor="center", width=105)
+        self.tree_pontos.column("Saldo", anchor="center", width=105)
+        self.tree_pontos.column("Status", anchor="w", width=105)
         self.tree_pontos.grid(row=2, column=0, columnspan=3, sticky="nsew", pady=5)
         
         self.tree_pontos.bind("<Double-1>", self.selected_point)
     
     def create_dashboard_components(self):
-        # Placeholder para dashboards
-        pass
-        # Gráficos e outras visualizações poderiam ser adicionados aqui
-        # Exemplo:
-        # self.canvas_dashboard = tk.Canvas(self.frame_dashboard)
-        # self.canvas_dashboard.grid(row=1, column=0, sticky="nsew")
-    
+        # Exemplo de dados
+        nome_funcionario = "João Silva"
+        intervalo_datas = "01/09/2024 - 30/09/2024"
+        quantidade_atestados = 2
+        quantidade_faltas = 1
+        total_horas_extras = "05:30"
+
+        # Labels para exibir informações
+        ttk.Label(self.frame_dashboard, text=f"Funcionário: {nome_funcionario}").grid(row=0, column=0, sticky="w", padx=10, pady=5)
+        ttk.Label(self.frame_dashboard, text=f"Intervalo de Datas: {intervalo_datas}").grid(row=1, column=0, sticky="w", padx=10, pady=5)
+        ttk.Label(self.frame_dashboard, text=f"Quantidade de Atestados: {quantidade_atestados}").grid(row=2, column=0, sticky="w", padx=10, pady=5)
+        ttk.Label(self.frame_dashboard, text=f"Quantidade de Faltas: {quantidade_faltas}").grid(row=3, column=0, sticky="w", padx=10, pady=5)
+        ttk.Label(self.frame_dashboard, text=f"Total de Horas Extras: {total_horas_extras}").grid(row=4, column=0, sticky="w", padx=10, pady=5)
+
+        # Frame para os gráficos
+        self.graph_frame = ttk.LabelFrame(self, text="Gráficos", padding=10)
+        self.graph_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+
+        # Chamar função para criar os gráficos
+        self.create_pie_chart()
+        self.create_bar_chart()
+
+    def create_pie_chart(self):
+        # Dados de exemplo
+        horas_trabalhadas = 160
+        horas_esperadas = 200
+
+        # Criar a figura do gráfico de pizza
+        fig, ax = plt.subplots(figsize=(4, 4))
+        labels = ['Horas Trabalhadas', 'Horas Restantes']
+        sizes = [horas_trabalhadas, horas_esperadas - horas_trabalhadas]
+        ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
+        ax.axis('equal')
+
+        # Adicionar o gráfico ao Frame usando grid
+        canvas = FigureCanvasTkAgg(fig, master=self.frame_dashboard)
+        canvas.draw()
+        canvas.get_tk_widget().grid(row=0, column=0, padx=10, pady=10)
+
+    def create_bar_chart(self):
+        # Dados de exemplo
+        periodo = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4']
+        horas_trabalhadas = [35, 40, 38, 42]
+
+        # Criar a figura do gráfico de barras
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.bar(periodo, horas_trabalhadas, color='skyblue')
+        ax.set_title('Horas Trabalhadas por Semana')
+        ax.set_xlabel('Semanas')
+        ax.set_ylabel('Horas Trabalhadas')
+
+        # Adicionar o gráfico ao Frame usando grid
+        canvas = FigureCanvasTkAgg(fig, master=self.frame_dashboard)
+        canvas.draw()
+        canvas.get_tk_widget().grid(row=0, column=1, padx=10, pady=10)
+      
     def selected_point(self, event):
         try:
             item = self.tree_pontos.selection()[0]
@@ -290,12 +348,14 @@ class View(ThemedTk):
         entrys_points = [self.employee_id, self.entry_data.get(), self.entry_entrada_1.get(), self.entry_saida_1.get(),
                                       self.entry_entrada_2.get(), self.entry_saida_2.get(), self.entry_entrada_3.get(),
                                       self.entry_saida_3.get(), self.presence_box.get()]
-        result = self.manager.handle_add_point(entrys_points)
+        result = self.manager.handle_add_point(entrys_points, self.presence_flag)
         if result:
             self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
                                self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
             self.update_treeviews_by_id(2)
+            self.presence_flag = None
             self.presence_box_reset()
+            self.presence_selected()
     
     def update_point(self):
         entrys_point_update = [self.id_point, self.entry_data.get(), self.entry_entrada_1.get(), self.entry_saida_1.get(),
@@ -306,8 +366,10 @@ class View(ThemedTk):
             self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
                                self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
             self.update_treeviews_by_id(2)
+            self.presence_flag = None
             self.presence_box_reset()
-    
+            self.presence_selected()
+            
     def delete_point(self):
         if self.id_point:
             alert =  messagebox.askyesno("Atenção", f"Deseja mesmo deletar o ponto com o ID:\n\n{self.id_point}")
@@ -321,6 +383,53 @@ class View(ThemedTk):
                 self.presence_box_reset()
         else:
             messagebox.showerror("Erro", "Selecione um ponto para deletar.") 
+
+    def presence_selected(self):
+        presence = self.presence_box.get()
+        if presence in ("FALTOU", "ATESTADO"):
+            self.entry_entrada_1.delete(0, tk.END)
+            self.entry_entrada_1.insert(0, "00:00")
+            self.entry_entrada_1.configure(state="disable")
+            self.entry_saida_1.delete(0, tk.END)
+            self.entry_saida_1.insert(0, "00:00")
+            self.entry_saida_1.configure(state="disable")
+            self.entry_entrada_2.delete(0, tk.END)
+            self.entry_entrada_2.insert(0, "00:00")
+            self.entry_entrada_2.configure(state="disable")
+            self.entry_saida_2.delete(0, tk.END)
+            self.entry_saida_2.insert(0, "00:00")
+            self.entry_saida_2.configure(state="disable")
+            self.entry_entrada_3.delete(0, tk.END)
+            self.entry_entrada_3.insert(0, "00:00")
+            self.entry_entrada_3.configure(state="disable")
+            self.entry_saida_3.delete(0, tk.END)
+            self.entry_saida_3.insert(0, "00:00")
+            self.entry_saida_3.configure(state="disable")
+            if presence == "FALTOU":
+                self.presence_flag = 1
+            elif presence == "ATESTADO":
+                self.presence_flag = 2
+        else:
+            self.presence_box_reset()
+            self.presence_flag = None
+            self.entry_entrada_1.configure(state="normal")
+            self.entry_entrada_1.delete(0, tk.END)
+            self.entry_entrada_1.insert(0, "")
+            self.entry_saida_1.configure(state="normal")
+            self.entry_saida_1.delete(0, tk.END)
+            self.entry_saida_1.insert(0, "")
+            self.entry_entrada_2.configure(state="normal")
+            self.entry_entrada_2.delete(0, tk.END)
+            self.entry_entrada_2.insert(0, "")
+            self.entry_saida_2.configure(state="normal")
+            self.entry_saida_2.delete(0, tk.END)
+            self.entry_saida_2.insert(0, "")
+            self.entry_entrada_3.configure(state="normal")
+            self.entry_entrada_3.delete(0, tk.END)
+            self.entry_entrada_3.insert(0, "")
+            self.entry_saida_3.configure(state="normal")
+            self.entry_saida_3.delete(0, tk.END)
+            self.entry_saida_3.insert(0, "")
 
     def filter_treeview_point(self):
         self.update_treeviews_by_id(2, self.entry_data_inicio.get(), self.entry_data_fim.get())
@@ -432,9 +541,14 @@ class View(ThemedTk):
 
     def presence_box_reset(self):
         self.presence_box.current(0)
+        
     def clear_entrys(self, entrys):
         for i in entrys:
             i.delete(0, tk.END)
+
+    def close_destroy(self):
+        self.manager.close_connection_manager()
+        self.destroy()
 
 if __name__ == "__main__":
     app = View()
