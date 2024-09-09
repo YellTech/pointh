@@ -20,22 +20,23 @@ class View(ThemedTk):
         self.employee_id = 0
         self.id_point = 0
         self.presence_flag = None
+        self.data_dash = []
         self.protocol("WM_DELETE_WINDOW", self.close_destroy)
         
         self.title("Controle de Ponto")
         self.geometry("1024x720")
-        self.minsize(1024, 720)
         self.iconbitmap("icon.ico")
         
         # Configuração das colunas e linhas principais
-        self.grid_columnconfigure(0, weight=2, uniform="group1")
-        self.grid_columnconfigure(1, weight=2, uniform="group1")
+        self.grid_columnconfigure(0, weight=1, uniform="group1")
+        self.grid_columnconfigure(1, weight=1, uniform="group1")
         self.grid_columnconfigure(2, weight=3, uniform="group1")
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=2)
 
         # Frames
         self.create_frames()
+        self.create_menu()
         self.load_config()
         self.update_treeviews_by_id(1)
         
@@ -64,7 +65,9 @@ class View(ThemedTk):
         self.frame_dashboard = ttk.LabelFrame(self, padding=10, text="Dashboard")
         self.frame_dashboard.grid(row=0, column=2, rowspan=2, sticky="nsew", padx=(5, 10))
         self.frame_dashboard.grid_columnconfigure(0, weight=1)
-        self.frame_dashboard.grid_rowconfigure(1, weight=1)
+        self.frame_dashboard.grid_columnconfigure(1, weight=1)
+        self.frame_dashboard.grid_columnconfigure(2, weight=1)
+        self.frame_dashboard.grid_rowconfigure(3, weight=1)
         
         # Frame Footer
         self.frame_footer = ttk.Frame(self, padding=10)
@@ -75,7 +78,6 @@ class View(ThemedTk):
         self.footer_label.grid()
 
         # Criando os componentes
-        self.create_menu()
         self.create_funcionarios_components()
         self.create_ponto_components()
         self.create_treeview_components()
@@ -85,7 +87,6 @@ class View(ThemedTk):
         # Criação do menu
         menu_bar = tk.Menu(self)
         self.config(menu=menu_bar)
-        
         # Menu Arquivo
         menu_arquivo = tk.Menu(menu_bar, tearoff=0)
         menu_bar.add_cascade(label="MENU", menu=menu_arquivo)
@@ -205,60 +206,19 @@ class View(ThemedTk):
     
     def create_dashboard_components(self):
         # Exemplo de dados
-        nome_funcionario = "João Silva"
-        intervalo_datas = "01/09/2024 - 30/09/2024"
+        self.clear_frame(self.frame_dashboard)
+        print(f"data_dash{self.data_dash}")
+        horas_trabalhadas_normais = self.manager.calc_hours_trabalhadas(self.data_dash)
         quantidade_atestados = 2
         quantidade_faltas = 1
         total_horas_extras = "05:30"
 
         # Labels para exibir informações
-        ttk.Label(self.frame_dashboard, text=f"Funcionário: {nome_funcionario}").grid(row=0, column=0, sticky="w", padx=10, pady=5)
-        ttk.Label(self.frame_dashboard, text=f"Intervalo de Datas: {intervalo_datas}").grid(row=1, column=0, sticky="w", padx=10, pady=5)
-        ttk.Label(self.frame_dashboard, text=f"Quantidade de Atestados: {quantidade_atestados}").grid(row=2, column=0, sticky="w", padx=10, pady=5)
-        ttk.Label(self.frame_dashboard, text=f"Quantidade de Faltas: {quantidade_faltas}").grid(row=3, column=0, sticky="w", padx=10, pady=5)
-        ttk.Label(self.frame_dashboard, text=f"Total de Horas Extras: {total_horas_extras}").grid(row=4, column=0, sticky="w", padx=10, pady=5)
-
-        # Frame para os gráficos
-        self.graph_frame = ttk.LabelFrame(self, text="Gráficos", padding=10)
-        self.graph_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
-
-        # Chamar função para criar os gráficos
-        self.create_pie_chart()
-        self.create_bar_chart()
-
-    def create_pie_chart(self):
-        # Dados de exemplo
-        horas_trabalhadas = 160
-        horas_esperadas = 200
-
-        # Criar a figura do gráfico de pizza
-        fig, ax = plt.subplots(figsize=(4, 4))
-        labels = ['Horas Trabalhadas', 'Horas Restantes']
-        sizes = [horas_trabalhadas, horas_esperadas - horas_trabalhadas]
-        ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
-        ax.axis('equal')
-
-        # Adicionar o gráfico ao Frame usando grid
-        canvas = FigureCanvasTkAgg(fig, master=self.frame_dashboard)
-        canvas.draw()
-        canvas.get_tk_widget().grid(row=0, column=0, padx=10, pady=10)
-
-    def create_bar_chart(self):
-        # Dados de exemplo
-        periodo = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4']
-        horas_trabalhadas = [35, 40, 38, 42]
-
-        # Criar a figura do gráfico de barras
-        fig, ax = plt.subplots(figsize=(6, 4))
-        ax.bar(periodo, horas_trabalhadas, color='skyblue')
-        ax.set_title('Horas Trabalhadas por Semana')
-        ax.set_xlabel('Semanas')
-        ax.set_ylabel('Horas Trabalhadas')
-
-        # Adicionar o gráfico ao Frame usando grid
-        canvas = FigureCanvasTkAgg(fig, master=self.frame_dashboard)
-        canvas.draw()
-        canvas.get_tk_widget().grid(row=0, column=1, padx=10, pady=10)
+        ttk.Label(self.frame_dashboard, text=f"Funcionário: {self.entry_nome.get()}").grid(row=0, column=0, sticky="ew")
+        ttk.Label(self.frame_dashboard, text=f"Intervalo de Datas: {self.entry_data_inicio.get()} a {self.entry_data_fim.get()}").grid(row=0, column=1, sticky="ew")
+        ttk.Label(self.frame_dashboard, text=f"Total horas normais: {horas_trabalhadas_normais}").grid(row=1, column=0, sticky="ew")
+        ttk.Label(self.frame_dashboard, text=f"Quantidade de Faltas: {quantidade_faltas}").grid(row=1, column=1, sticky="ew")
+        ttk.Label(self.frame_dashboard, text=f"Total de Horas Extras: {total_horas_extras}").grid(row=1, column=3, sticky="ew")
       
     def selected_point(self, event):
         try:
@@ -433,13 +393,16 @@ class View(ThemedTk):
 
     def filter_treeview_point(self):
         self.update_treeviews_by_id(2, self.entry_data_inicio.get(), self.entry_data_fim.get())
+        self.create_dashboard_components()
         
     def update_treeviews_by_id(self, view_id, data_initial = None, data_end = None):
         if view_id == 1:
             data = self.manager.get_employee()
             self.update_treeview(self.tree_funcionarios, data)
         elif view_id == 2:
-            data = self.manager.get_point_employee(self.employee_id, data_initial, data_end)
+            indices = [0, 2, 9, 11, 12]
+            self.data_dash = self.manager.get_point_employee(self.employee_id, data_initial, data_end)
+            data = [tuple(tupla[i] for i in indices) for tupla in self.data_dash]
             self.update_treeview(self.tree_pontos, data)
         else:
             messagebox.showerror("Erro", "Erro ao atualizar as treeviews.")
@@ -546,9 +509,13 @@ class View(ThemedTk):
         for i in entrys:
             i.delete(0, tk.END)
 
+    def clear_frame(self, frame):
+        for widget in frame.winfo_children():
+            widget.destroy()
+
     def close_destroy(self):
         self.manager.close_connection_manager()
-        self.destroy()
+        self.quit()
 
 if __name__ == "__main__":
     app = View()

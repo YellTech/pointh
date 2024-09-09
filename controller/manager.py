@@ -163,7 +163,6 @@ class Manager:
         points for a given employee. The data points are extracted from the entries retrieved from the
         database for the specified employee ID.
         """
-        indices = [0, 2, 9, 11, 12]
         entrys = self.db.get_all_entry(employee_id, self.convert_to_sql_date(data_initial), self.convert_to_sql_date(data_end))
         if not entrys:
             if employee_id == 0:
@@ -174,8 +173,7 @@ class Manager:
                 return []
             else:
                 return []
-        entrys = [tuple(tupla[i] for i in indices) for tupla in entrys]
-        entrys = self.convert_dates_in_tuples(entrys)
+        entrys = self.convert_dates_in_tuples(entrys, [2])
         return entrys
  
     def handle_get_point_tree(self, point_id, employee_id):
@@ -194,8 +192,10 @@ class Manager:
         the input `time_str`. It calculates this by converting the hours to minutes (hour * 60) and
         adding the minutes to it.
         """
+        sign = -1 if time_str.startswith("-") else 1  # Check if the time is negative
+        time_str = time_str.lstrip("-")  # Remove the negative sign for processing
         hour, minute = map(int, time_str.split(":"))
-        return hour * 60 + minute
+        return sign * ((hour * 60) + minute)
     
     def convert_to_sql_date(self, date_str):
         # Converte uma data de 'dd-mm-YYYY' para 'YYYY-MM-DD'
@@ -274,6 +274,24 @@ class Manager:
             segundo = entrys[i+1]
             total = total + (segundo - primeiro)
         return int(total)
+
+    def calc_hours_trabalhadas(self, data):
+        horas_normais = 0
+        for tupla in data:
+            if tupla[12] == "NORMAL":
+                minutos = self.time_to_minute(tupla[9])
+                print(minutos)
+                horas_normais += minutos
+        return self.minutes_to_time(horas_normais)
+    
+    def calc_hours_atestado(self, data):
+        pass
+
+    def calc_hours_faltou(self, data):
+        pass
+    
+    def calc_hours_extra(self, data):
+        pass    
    
     def close_connection_manager(self):
         self.db.close_connection()         

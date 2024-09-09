@@ -319,7 +319,7 @@ class DbAccess:
             try:
                 self.cursor.execute("""
                 DELETE FROM banco_horas WHERE id = ?
-                """, (entry_id))
+                """, (entry_id,))
                 
                 self.conn.commit()
                 messagebox.showinfo("Atenção", f"Ponto deletado com sucesso.")
