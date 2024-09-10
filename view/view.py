@@ -16,7 +16,7 @@ class View(ThemedTk):
         super().__init__(theme=theme)
         
         self.config_file = "config.json"
-        self.manager = Manager()
+        self.mg = Manager()
         self.employee_id = 0
         self.id_point = 0
         self.presence_flag = None
@@ -64,9 +64,9 @@ class View(ThemedTk):
         # Frame para Dashboards
         self.frame_dashboard = ttk.LabelFrame(self, padding=10, text="Dashboard")
         self.frame_dashboard.grid(row=0, column=2, rowspan=2, sticky="nsew", padx=(5, 10))
-        self.frame_dashboard.grid_columnconfigure(0, weight=1)
+        self.frame_dashboard.grid_columnconfigure(0, weight=2)
         self.frame_dashboard.grid_columnconfigure(1, weight=1)
-        self.frame_dashboard.grid_columnconfigure(2, weight=1)
+        self.frame_dashboard.grid_columnconfigure(2, weight=2)
         self.frame_dashboard.grid_rowconfigure(3, weight=1)
         
         # Frame Footer
@@ -207,24 +207,60 @@ class View(ThemedTk):
     def create_dashboard_components(self):
         # Exemplo de dados
         self.clear_frame(self.frame_dashboard)
-        print(f"data_dash{self.data_dash}")
-        horas_trabalhadas_normais = self.manager.calc_hours_trabalhadas(self.data_dash)
-        quantidade_atestados = 2
-        quantidade_faltas = 1
-        total_horas_extras = "05:30"
+        horas_trabalhadas_normais, horas_esperadas = self.mg.calc_hours_trabalhadas(self.data_dash)
+        horas_atestados, quantidade_atestados = self.mg.calc_hours_atestado(self.data_dash) 
+        horas_faltou, quantidade_faltas = self.mg.calc_hours_faltou(self.data_dash)
+        horas_extras = self.mg.calc_hours_extra(self.data_dash)
+        horas_negativas = self.mg.calc_hours_negativas(self.data_dash)
+        
+        if self.data_dash:
+            label_employee_dash = ttk.Label(self.frame_dashboard, text=f"Funcionário: {self.entry_nome.get()}", font=("TkDefaultFont", 12,"bold"))
+            label_employee_dash.grid(row=0, column=0, sticky="w")
+            label_filter_data = ttk.Label(self.frame_dashboard, text=f"Período: {self.entry_data_inicio.get()} a {self.entry_data_fim.get()}", font=("TkDefaultFont", 12,"bold"))
+            label_filter_data.grid(row=0, column=2, sticky="e")
+            
+            def horas_trabalhadas_graf():
+                labels = f'Trabalhadas:\n{horas_trabalhadas_normais}', f'Estimadas:\n{horas_esperadas}'
+                sizes = [self.mg.time_to_minute(horas_trabalhadas_normais), self.mg.time_to_minute(horas_esperadas)]
 
-        # Labels para exibir informações
-        ttk.Label(self.frame_dashboard, text=f"Funcionário: {self.entry_nome.get()}").grid(row=0, column=0, sticky="ew")
-        ttk.Label(self.frame_dashboard, text=f"Intervalo de Datas: {self.entry_data_inicio.get()} a {self.entry_data_fim.get()}").grid(row=0, column=1, sticky="ew")
-        ttk.Label(self.frame_dashboard, text=f"Total horas normais: {horas_trabalhadas_normais}").grid(row=1, column=0, sticky="ew")
-        ttk.Label(self.frame_dashboard, text=f"Quantidade de Faltas: {quantidade_faltas}").grid(row=1, column=1, sticky="ew")
-        ttk.Label(self.frame_dashboard, text=f"Total de Horas Extras: {total_horas_extras}").grid(row=1, column=3, sticky="ew")
-      
+                # Cria a figura e o gráfico
+                fig, ax = plt.subplots(figsize=(3, 2))
+                ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90, shadow=True, labeldistance=1.2)
+                ax.axis('equal')
+                ax.set_title("Horas Trabalhadas")
+
+                # Cria um Canvas Tkinter
+                canvas = FigureCanvasTkAgg(fig, master=self.frame_dashboard)
+                canvas.draw()
+
+                # Cria um widget tkinter
+                canvas.get_tk_widget().grid(row=2, column=0, sticky="nsew")
+            
+            def horas_negativas_graf():
+                labels = f'Faltas:\n{horas_faltou}', f'Não cumpridas:\n{horas_negativas}'
+                sizes = [-1*(self.mg.time_to_minute(horas_faltou)), -1*(self.mg.time_to_minute(horas_negativas))]
+
+                # Cria a figura e o gráfico
+                fig, ax = plt.subplots(figsize=(3, 2))
+                ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=45, shadow=True, labeldistance=1.2)
+                ax.axis('equal')
+                ax.set_title("Horas Negativas")
+
+                # Cria um Canvas Tkinter
+                canvas = FigureCanvasTkAgg(fig, master=self.frame_dashboard)
+                canvas.draw()
+
+                # Cria um widget tkinter
+                canvas.get_tk_widget().grid(row=2, column=2, sticky="nsew")
+                
+            horas_trabalhadas_graf()
+            horas_negativas_graf()
+            
     def selected_point(self, event):
         try:
             item = self.tree_pontos.selection()[0]
             value = self.tree_pontos.item(item, 'values')
-            point = self.manager.handle_get_point_tree(value[0], self.employee_id)
+            point = self.mg.handle_get_point_tree(value[0], self.employee_id)
             self.id_point = value[0]
             self.entry_data.delete(0, tk.END)
             self.entry_data.insert(0, point[2])
@@ -262,11 +298,12 @@ class View(ThemedTk):
                                self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
             self.update_treeviews_by_id(2)
             self.presence_box_reset()
+            self.clear_frame(self.frame_dashboard)
         except:
             pass
     
     def add_employee_view(self):
-        self.manager.handle_add_employee(self.entry_nome.get())
+        self.mg.handle_add_employee(self.entry_nome.get())
         self.entry_nome.delete(0, tk.END)
         self.employee_id = None
         self.label_selected_employee()
@@ -276,7 +313,7 @@ class View(ThemedTk):
         if self.entry_nome.get() and self.employee_id:
             alert =  messagebox.askyesno("Atenção", f"Deseja mesmo editar o funcionário com o ID:\n\n{self.employee_id}")
             if alert:
-                self.manager.handle_update_employee(self.employee_id, self.values[1], self.entry_nome.get())
+                self.mg.handle_update_employee(self.employee_id, self.values[1], self.entry_nome.get())
                 self.entry_nome.delete(0, tk.END)
                 self.employee_id = None
                 self.label_selected_employee()
@@ -292,7 +329,7 @@ class View(ThemedTk):
         if self.entry_nome.get() and self.employee_id:
             alert =  messagebox.askyesno("Atenção", f"Deseja mesmo deletar o funcionário com o ID:\n\n{self.employee_id}")
             if alert:
-                self.manager.handle_delete_employee(self.employee_id)
+                self.mg.handle_delete_employee(self.employee_id)
                 self.entry_nome.delete(0, tk.END)
                 self.employee_id = None
                 self.label_selected_employee()
@@ -308,7 +345,7 @@ class View(ThemedTk):
         entrys_points = [self.employee_id, self.entry_data.get(), self.entry_entrada_1.get(), self.entry_saida_1.get(),
                                       self.entry_entrada_2.get(), self.entry_saida_2.get(), self.entry_entrada_3.get(),
                                       self.entry_saida_3.get(), self.presence_box.get()]
-        result = self.manager.handle_add_point(entrys_points, self.presence_flag)
+        result = self.mg.handle_add_point(entrys_points, self.presence_flag)
         if result:
             self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
                                self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
@@ -321,7 +358,7 @@ class View(ThemedTk):
         entrys_point_update = [self.id_point, self.entry_data.get(), self.entry_entrada_1.get(), self.entry_saida_1.get(),
                                       self.entry_entrada_2.get(), self.entry_saida_2.get(), self.entry_entrada_3.get(),
                                       self.entry_saida_3.get(), self.presence_box.get()]
-        result = self.manager.handle_update_point(entrys_point_update)
+        result = self.mg.handle_update_point(entrys_point_update, self.presence_flag)
         if result:
             self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
                                self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
@@ -334,7 +371,7 @@ class View(ThemedTk):
         if self.id_point:
             alert =  messagebox.askyesno("Atenção", f"Deseja mesmo deletar o ponto com o ID:\n\n{self.id_point}")
             if alert:
-                self.manager.handle_delete_point(self.id_point)
+                self.mg.handle_delete_point(self.id_point)
                 self.entry_nome.delete(0, tk.END)
                 self.id_point = None
                 self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
@@ -397,11 +434,11 @@ class View(ThemedTk):
         
     def update_treeviews_by_id(self, view_id, data_initial = None, data_end = None):
         if view_id == 1:
-            data = self.manager.get_employee()
+            data = self.mg.get_employee()
             self.update_treeview(self.tree_funcionarios, data)
         elif view_id == 2:
             indices = [0, 2, 9, 11, 12]
-            self.data_dash = self.manager.get_point_employee(self.employee_id, data_initial, data_end)
+            self.data_dash = self.mg.get_point_employee(self.employee_id, data_initial, data_end)
             data = [tuple(tupla[i] for i in indices) for tupla in self.data_dash]
             self.update_treeview(self.tree_pontos, data)
         else:
@@ -514,7 +551,7 @@ class View(ThemedTk):
             widget.destroy()
 
     def close_destroy(self):
-        self.manager.close_connection_manager()
+        self.mg.close_connection_manager()
         self.quit()
 
 if __name__ == "__main__":

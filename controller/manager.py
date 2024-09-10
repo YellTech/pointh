@@ -121,7 +121,7 @@ class Manager:
                 messagebox.showerror("Erro", "Preencha todos os campos.")
                 return
     
-    def handle_update_point(self, entrys_data_update):
+    def handle_update_point(self, entrys_data_update, flag_presence):
         check = True
         for i in entrys_data_update:
             if not i:
@@ -143,7 +143,11 @@ class Manager:
                                             entrys_time[3], entrys_time[4], entrys_time[5], 
                                             self.minutes_to_time(self.total_add_point(entrys_minutes)),
                                             self.minutes_to_time(self.load_config_workload()),
-                                            self.minutes_to_time(self.total_add_point(entrys_minutes) - self.load_config_workload()), entrys_data_update[8]) 
+                                            self.minutes_to_time(self.total_add_point(entrys_minutes) - self.load_config_workload()) if not flag_presence
+                                            else f"-{self.minutes_to_time(self.load_config_workload())}" if flag_presence == 1
+                                            else f"{self.minutes_to_time(self.load_config_workload())}" if flag_presence == 2
+                                            else "ERRO" ,
+                                            entrys_data_update[8]) 
             return result           
         else:
             messagebox.showerror("Erro", "Preencha todos os campos.")
@@ -277,21 +281,51 @@ class Manager:
 
     def calc_hours_trabalhadas(self, data):
         horas_normais = 0
+        horas_eperadas = 0
         for tupla in data:
+            horas_eperadas += self.time_to_minute("08:48")
             if tupla[12] == "NORMAL":
                 minutos = self.time_to_minute(tupla[9])
-                print(minutos)
                 horas_normais += minutos
-        return self.minutes_to_time(horas_normais)
+        return self.minutes_to_time(horas_normais), self.minutes_to_time(horas_eperadas)
     
     def calc_hours_atestado(self, data):
-        pass
+        horas_atestado = 0
+        quantidade_atestados = 0
+        for tupla in data:
+            if tupla[12] == "ATESTADO":
+                minutos = self.time_to_minute(tupla[10])
+                quantidade_atestados += 1
+                horas_atestado += minutos
+        return self.minutes_to_time(horas_atestado), quantidade_atestados
 
     def calc_hours_faltou(self, data):
-        pass
+        horas_faltou = 0
+        quantidade_faltas = 0
+        for tupla in data:
+            if tupla[12] == "FALTOU":
+                minutos = self.time_to_minute(tupla[10])
+                quantidade_faltas += 1
+                horas_faltou += minutos
+        return f"-{self.minutes_to_time(horas_faltou)}", quantidade_faltas
     
     def calc_hours_extra(self, data):
-        pass    
+        horas_extras = 0
+        for tupla in data:
+            if tupla[12] == "NORMAL":
+                minutos = self.time_to_minute(tupla[11])
+                if minutos > 0:
+                    horas_extras += minutos
+        return self.minutes_to_time(horas_extras)
+    
+    def calc_hours_negativas(self, data):
+        horas_negativas = 0
+        for tupla in data:
+            if tupla[12] == "NORMAL":
+                minutos = self.time_to_minute(tupla[11])
+                if minutos < 0:
+                    horas_negativas += minutos  
+        return self.minutes_to_time(horas_negativas)
    
     def close_connection_manager(self):
         self.db.close_connection()         
