@@ -30,7 +30,7 @@ class View(ThemedTk):
         # Configuração das colunas e linhas principais
         self.grid_columnconfigure(0, weight=1, uniform="group1")
         self.grid_columnconfigure(1, weight=1, uniform="group1")
-        self.grid_columnconfigure(2, weight=3, uniform="group1")
+        self.grid_columnconfigure(2, weight=2, uniform="group1")
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=2)
 
@@ -62,12 +62,12 @@ class View(ThemedTk):
         self.frame_treeview.grid_rowconfigure(2, weight=1)
 
         # Frame para Dashboards
-        self.frame_dashboard = ttk.LabelFrame(self, padding=10, text="Dashboard")
+        self.frame_dashboard = ttk.LabelFrame(self, padding=10, text="Resumo")
         self.frame_dashboard.grid(row=0, column=2, rowspan=2, sticky="nsew", padx=(5, 10))
         self.frame_dashboard.grid_columnconfigure(0, weight=2)
         self.frame_dashboard.grid_columnconfigure(1, weight=1)
         self.frame_dashboard.grid_columnconfigure(2, weight=2)
-        self.frame_dashboard.grid_rowconfigure(3, weight=1)
+        self.frame_dashboard.grid_rowconfigure(14, weight=1)
         
         # Frame Footer
         self.frame_footer = ttk.Frame(self, padding=10)
@@ -82,6 +82,8 @@ class View(ThemedTk):
         self.create_ponto_components()
         self.create_treeview_components()
         self.create_dashboard_components()
+        
+        #self.update_idletasks()
     
     def create_menu(self):
         # Criação do menu
@@ -215,46 +217,51 @@ class View(ThemedTk):
         
         if self.data_dash:
             label_employee_dash = ttk.Label(self.frame_dashboard, text=f"Funcionário: {self.entry_nome.get()}", font=("TkDefaultFont", 12,"bold"))
-            label_employee_dash.grid(row=0, column=0, sticky="w")
-            label_filter_data = ttk.Label(self.frame_dashboard, text=f"Período: {self.entry_data_inicio.get()} a {self.entry_data_fim.get()}", font=("TkDefaultFont", 12,"bold"))
-            label_filter_data.grid(row=0, column=2, sticky="e")
+            label_employee_dash.grid(row=0, column=0, sticky="ew")
+            label_filter_data = ttk.Label(self.frame_dashboard, text=f"Período: {self.entry_data_inicio.get()} a {self.entry_data_fim.get()}\n", font=("TkDefaultFont", 12,"bold"))
+            label_filter_data.grid(row=1, column=0, sticky="ew")
             
-            def horas_trabalhadas_graf():
-                labels = f'Trabalhadas:\n{horas_trabalhadas_normais}', f'Estimadas:\n{horas_esperadas}'
-                sizes = [self.mg.time_to_minute(horas_trabalhadas_normais), self.mg.time_to_minute(horas_esperadas)]
-
-                # Cria a figura e o gráfico
-                fig, ax = plt.subplots(figsize=(3, 2))
-                ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90, shadow=True, labeldistance=1.2)
-                ax.axis('equal')
-                ax.set_title("Horas Trabalhadas")
-
-                # Cria um Canvas Tkinter
-                canvas = FigureCanvasTkAgg(fig, master=self.frame_dashboard)
-                canvas.draw()
-
-                # Cria um widget tkinter
-                canvas.get_tk_widget().grid(row=2, column=0, sticky="nsew")
+            fonte = ("TkDefaultFont", 12,"bold")
             
-            def horas_negativas_graf():
-                labels = f'Faltas:\n{horas_faltou}', f'Não cumpridas:\n{horas_negativas}'
-                sizes = [-1*(self.mg.time_to_minute(horas_faltou)), -1*(self.mg.time_to_minute(horas_negativas))]
-
-                # Cria a figura e o gráfico
-                fig, ax = plt.subplots(figsize=(3, 2))
-                ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=45, shadow=True, labeldistance=1.2)
-                ax.axis('equal')
-                ax.set_title("Horas Negativas")
-
-                # Cria um Canvas Tkinter
-                canvas = FigureCanvasTkAgg(fig, master=self.frame_dashboard)
-                canvas.draw()
-
-                # Cria um widget tkinter
-                canvas.get_tk_widget().grid(row=2, column=2, sticky="nsew")
-                
-            horas_trabalhadas_graf()
-            horas_negativas_graf()
+            label_horas_trabalhadas = ttk.Label(self.frame_dashboard, text=f"Horas trabalhadas: {horas_trabalhadas_normais}", font=fonte)
+            label_horas_trabalhadas.grid(row=2, column=0, sticky="ew")
+            
+            label_horas_atestado = ttk.Label(self.frame_dashboard, text=f"Horas atestado: {horas_atestados}", font=fonte)
+            label_horas_atestado.grid(row=3, column=0, sticky="ew")
+            
+            label_horas_extras = ttk.Label(self.frame_dashboard, text=f"Horas extras: {horas_extras}", font=fonte)
+            label_horas_extras.grid(row=4, column=0, sticky="ew")
+            
+            label_horas_esperadas = ttk.Label(self.frame_dashboard, text=f"Horas esperadas: {horas_esperadas}", font=fonte)
+            label_horas_esperadas.grid(row=5, column=0, sticky="ew")
+            
+            separador = ttk.Separator(self.frame_dashboard, orient="horizontal")
+            separador.grid(row=6, column=0, columnspan=3, sticky="nsew")
+            
+            label_horas_totais_trabalhadas = ttk.Label(self.frame_dashboard, font=fonte, foreground="blue", text=f"Horas totais: {self.mg.minutes_to_time(self.mg.time_to_minute(horas_trabalhadas_normais) + self.mg.time_to_minute(horas_extras) + self.mg.time_to_minute(horas_atestados))}\n")
+            label_horas_totais_trabalhadas.grid(row=7, column=0, sticky="ew")
+            
+            label_horas_faltou = ttk.Label(self.frame_dashboard, text=f"Horas faltou: {horas_faltou}", font=fonte)
+            label_horas_faltou.grid(row=8, column=0, sticky="ew")
+            
+            label_horas_negativas = ttk.Label(self.frame_dashboard, text=f"Deficit Horas diárias: {horas_negativas}", font=fonte)
+            label_horas_negativas.grid(row=9, column=0, sticky="ew")
+            
+            separador1 = ttk.Separator(self.frame_dashboard, orient="horizontal")
+            separador1.grid(row=10, column=0, columnspan=3, sticky="nsew")
+    
+            label_horas_nao_cumpridas = ttk.Label(self.frame_dashboard, font=fonte, foreground="red", text=f"Horas totais não cumpridas: -{self.mg.minutes_to_time(self.mg.time_to_minute(horas_esperadas) - (self.mg.time_to_minute(horas_trabalhadas_normais) + self.mg.time_to_minute(horas_atestados)))}\n")
+            label_horas_nao_cumpridas.grid(row=11, column=0, sticky="ew")
+            
+            label_quantidade_atestados = ttk.Label(self.frame_dashboard, text=f"Quantidade de atestados: {quantidade_atestados}", font=fonte)
+            label_quantidade_atestados.grid(row=12, column=0, sticky="ew")
+            
+            label_quantidade_faltas = ttk.Label(self.frame_dashboard, text=f"Quantidade faltas: {quantidade_faltas}", font=fonte)
+            label_quantidade_faltas.grid(row=13, column=0, sticky="ew")
+            
+            
+            
+            
             
     def selected_point(self, event):
         try:
