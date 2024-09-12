@@ -1,5 +1,5 @@
-from view.view import View
-from model.dbaccess import DbAccess
+from view import View
+from dbaccess import DbAccess
 
 def run():
     db_init = DbAccess()
@@ -7,4 +7,5 @@ def run():
     app = View()
     app.mainloop()
 
-run()
+if __name__ == "__main__":
+    run()

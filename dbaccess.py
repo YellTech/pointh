@@ -7,7 +7,7 @@ de produtividade, sinta-se a vontade para modificar.
 """
 
 class DbAccess:
-    def __init__(self, db_name="model/database.db"):
+    def __init__(self, db_name="database.db"):
         """
         The function initializes a database connection with a default database name.
         

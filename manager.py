@@ -1,4 +1,4 @@
-from model.dbaccess import DbAccess
+from dbaccess import DbAccess
 from tkinter import messagebox
 import json
 

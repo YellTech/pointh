@@ -1,2 +1,0 @@
-# pointh
- Gerenciador de ponto

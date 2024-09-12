@@ -3,13 +3,11 @@ from tkinter import messagebox
 from ttkthemes import ThemedTk
 from tkinter import ttk
 from tkcalendar import DateEntry
-from controller.manager import Manager
+from manager import Manager
 import datetime
 import json
 import os
 import re
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class View(ThemedTk):
     def __init__(self, theme="radiance"):
@@ -498,7 +496,7 @@ class View(ThemedTk):
         top.destroy()
 
     def ensure_default_config(self):
-        default_config = {"carga_horaria": "8:00"}
+        default_config = {"carga_horaria": "8:48"}
         with open(self.config_file, "w") as file:
             json.dump(default_config, file, indent=4)
     
