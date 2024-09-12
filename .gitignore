@@ -159,6 +159,7 @@ database.db
 config.json
 # Etc
 .gitignore
+teste.py
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
