@@ -19,6 +19,7 @@ class View(ThemedTk):
         self.id_point = 0
         self.presence_flag = None
         self.data_dash = []
+        self.control_date = None
         self.protocol("WM_DELETE_WINDOW", self.close_destroy)
         
         self.title("Controle de Ponto")
@@ -255,11 +256,7 @@ class View(ThemedTk):
             label_quantidade_atestados.grid(row=12, column=0, sticky="ew")
             
             label_quantidade_faltas = ttk.Label(self.frame_dashboard, text=f"Quantidade faltas: {quantidade_faltas}", font=fonte)
-            label_quantidade_faltas.grid(row=13, column=0, sticky="ew")
-            
-            
-            
-            
+            label_quantidade_faltas.grid(row=13, column=0, sticky="ew")      
             
     def selected_point(self, event):
         try:
@@ -459,22 +456,33 @@ class View(ThemedTk):
         # Cria a janela de configuração
         top = tk.Toplevel(self)
         top.title("Configurações")
-        top.geometry("300x200")
+        top.geometry("270x400")
         top.resizable(False, False)
         top.iconbitmap("config.ico")
         top.grab_set()
         
         
         # Configurações dos widgets
-        ttk.Label(top, text="Carga Horária:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        ttk.Label(top, text="Carga Horária:").pack(pady=(10, 0), padx=70, anchor="w")
         self.entry_carga_horaria = ttk.Entry(top)
-        self.entry_carga_horaria.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+        self.entry_carga_horaria.pack(padx=70, anchor="w")
         self.entry_carga_horaria.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_carga_horaria))
         
+        self.sequence_check = ttk.Checkbutton(top, text="Sequencial?")
+        self.sequence_check.pack(pady=(25, 10), padx=70, anchor="w")
+        self.sabado_check = ttk.Checkbutton(top, text="Sabádo?")
+        self.sabado_check.pack(pady=10, padx=70, anchor="w")
+        self.domingo_check = ttk.Checkbutton(top, text="Domingo?")
+        self.domingo_check.pack(pady=10, padx=70, anchor="w")
+        
+        self.backup = ttk.Button(top, text="Backup")
+        self.backup.pack(pady=(10, 0), padx=70, anchor="w")
+        self.label_backup = ttk.Label(top, text="Backup Desativado!", foreground="red")
+        self.label_backup.pack(pady=(0, 10), padx=70, anchor="w")
         self.load_config()
         self.entry_carga_horaria.insert(0, self.carga_horaria)
           
-        ttk.Button(top, text="Salvar", command=lambda: self.save_config(top)).grid(row=1, column=0, columnspan=2, pady=10)
+        ttk.Button(top, text="Salvar", command=lambda: self.save_config(top)).pack(pady=10, padx=70, anchor="w")
         
     def load_config(self):
         self.config_file = "config.json"
@@ -496,7 +504,12 @@ class View(ThemedTk):
         top.destroy()
 
     def ensure_default_config(self):
-        default_config = {"carga_horaria": "8:48"}
+        default_config = {"carga_horaria": "8:48",
+                          "sequencial": False,
+                          "sabado": False,
+                          "domingo": False,
+                          "backup": False
+                          }
         with open(self.config_file, "w") as file:
             json.dump(default_config, file, indent=4)
     

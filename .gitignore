@@ -156,7 +156,7 @@ cython_debug/
 
 # Database
 database.db
-
+config.json
 # Etc
 .gitignore
 
