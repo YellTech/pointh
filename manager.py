@@ -1,7 +1,6 @@
 from dbaccess import DbAccess
 from tkinter import messagebox
 import json
-from datetime import timedelta
 
 # The `Manager` class in Python contains methods for managing employees and time entries in a
 # database, handling operations such as adding, updating, deleting employees, and processing time
@@ -327,18 +326,6 @@ class Manager:
                 if minutos < 0:
                     horas_negativas += minutos  
         return self.minutes_to_time(horas_negativas)
-   
-    def next_day_sequence(self, date, control):
-        
-        new_date = date + timedelta(days=1)
-        
-        if control == 1:
-            while new_date.weekday() >=5:
-                new_date += timedelta(days=1)
-        elif control ==2:
-            while new_date.weekday() >= 6:
-                new_date += timedelta(days=1)
-        return new_date
    
     def close_connection_manager(self):
         self.db.close_connection()         

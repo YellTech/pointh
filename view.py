@@ -3,8 +3,11 @@ from tkinter import messagebox
 from ttkthemes import ThemedTk
 from tkinter import ttk
 from tkcalendar import DateEntry
+from tkinter import filedialog
 from manager import Manager
+import shutil
 import datetime
+from datetime import timedelta
 import json
 import os
 import re
@@ -38,6 +41,7 @@ class View(ThemedTk):
         self.create_menu()
         self.load_config()
         self.update_treeviews_by_id(1)
+        self.backup_start()
         
     def create_frames(self):
         # Frame para CRUD de Funcionários
@@ -355,6 +359,7 @@ class View(ThemedTk):
             self.presence_flag = None
             self.presence_box_reset()
             self.presence_selected()
+            self.next_day_sequence()
     
     def update_point(self):
         entrys_point_update = [self.id_point, self.entry_data.get(), self.entry_entrada_1.get(), self.entry_saida_1.get(),
@@ -468,17 +473,19 @@ class View(ThemedTk):
         self.entry_carga_horaria.pack(padx=70, anchor="w")
         self.entry_carga_horaria.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_carga_horaria))
         
-        self.sequence_check = ttk.Checkbutton(top, text="Sequencial?")
+        self.sequence_var = tk.BooleanVar()
+        self.sabado_var = tk.BooleanVar()
+        self.domingo_var = tk.BooleanVar()
+        
+        self.sequence_check = ttk.Checkbutton(top, text="Sequencial?", variable=self.sequence_var)
         self.sequence_check.pack(pady=(25, 10), padx=70, anchor="w")
-        self.sabado_check = ttk.Checkbutton(top, text="Sabádo?")
+        self.sabado_check = ttk.Checkbutton(top, text="Sabádo?", variable=self.sabado_var)
         self.sabado_check.pack(pady=10, padx=70, anchor="w")
-        self.domingo_check = ttk.Checkbutton(top, text="Domingo?")
+        self.domingo_check = ttk.Checkbutton(top, text="Domingo?", variable=self.domingo_var)
         self.domingo_check.pack(pady=10, padx=70, anchor="w")
         
-        self.backup = ttk.Button(top, text="Backup")
+        self.backup = ttk.Button(top, text="Backup", command=self.backup_select)
         self.backup.pack(pady=(10, 0), padx=70, anchor="w")
-        self.label_backup = ttk.Label(top, text="Backup Desativado!", foreground="red")
-        self.label_backup.pack(pady=(0, 10), padx=70, anchor="w")
         self.load_config()
         self.entry_carga_horaria.insert(0, self.carga_horaria)
           
@@ -491,14 +498,23 @@ class View(ThemedTk):
         with open(self.config_file, "r") as file:
             config = json.load(file)
             self.carga_horaria = config.get("carga_horaria", "")
+            self.sequence_check = config.get("sequencial", "")
+            self.sabado_check = config.get("sabado", "")
+            self.domingo_check = config.get("domingo", "")
+            self.backup_dir = config.get("backup_dir", "")  
               
     def save_config(self, top):
         carga_horaria = self.entry_carga_horaria.get()
         digits = re.sub(r'\D', '', carga_horaria)
-        if not carga_horaria or carga_horaria == "0":
+        if not digits or int(digits) == "0":
             messagebox.showerror("Erro", "A carga horária dever conter apenas numeros e\nser difente de zero ou vazio.")
             return
-        config = {"carga_horaria": carga_horaria}
+        config = {"carga_horaria": carga_horaria,
+                  "sequencial": self.sequence_var.get(),
+                  "sabado": self.sabado_var.get(),
+                  "domingo": self.domingo_var.get(),
+                  "backup_dir": self.backup_dir
+                  }
         with open(self.config_file, "w") as file:
             json.dump(config, file, indent=4)
         top.destroy()
@@ -508,7 +524,7 @@ class View(ThemedTk):
                           "sequencial": False,
                           "sabado": False,
                           "domingo": False,
-                          "backup": False
+                          "backup_dir": None
                           }
         with open(self.config_file, "w") as file:
             json.dump(default_config, file, indent=4)
@@ -572,6 +588,46 @@ class View(ThemedTk):
         self.mg.close_connection_manager()
         self.quit()
 
+    def backup_select(self):
+        root = tk.Tk()
+        root.withdraw()
+        self.backup_dir = filedialog.askdirectory()
+
+        if self.backup_dir:
+            return self.backup_dir
+        else:
+            return None
+        
+    def backup_start(self):
+        if self.backup_dir:
+            database = "database.db"
+            pasta = os.path.join(self.backup_dir, "backup_pointh")
+            os.makedirs(pasta, exist_ok=True)
+            destino = os.path.join(pasta, database)
+            shutil.copy2(database, destino)
+        else:
+            question = messagebox.askyesno("Atenção", "Backup não configurado, configurar?")
+            if question:
+                self.open_config_window()
+    
+    def next_day_sequence(self):
+        
+        new_date = self.entry_data.get_date() + timedelta(days=1)
+        
+        if self.sequence_var and self.sabado_var and not self.domingo_var:
+            while new_date.weekday() ==5:
+                new_date += timedelta(days=1)
+        elif self.sequence_var and self.domingo_var and not self.sabado_var:
+            while new_date.weekday() == 6:
+                new_date += timedelta(days=1)
+        elif self.sequence_var and self.sabado_var and self.domingo_var:
+            while new_date.weekday() >= 5:
+                new_date += timedelta(days=1)
+        elif self.sequence_var:        
+            return self.entry_data.insert(0, new_date)
+        else:
+            return self.entry_data.insert(0, self.entry_data.get())
+    
 if __name__ == "__main__":
     app = View()
     app.mainloop()
