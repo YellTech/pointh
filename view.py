@@ -7,6 +7,7 @@ from tkinter import filedialog
 from manager import Manager
 import shutil
 import datetime
+import time
 from datetime import timedelta
 import json
 import os
@@ -26,6 +27,7 @@ class View(ThemedTk):
         self.sequence_var = tk.BooleanVar()
         self.sabado_var = tk.BooleanVar()
         self.domingo_var = tk.BooleanVar()
+        self.version = 0
         self.protocol("WM_DELETE_WINDOW", self.close_destroy)
         
         self.title("Controle de Ponto")
@@ -45,7 +47,6 @@ class View(ThemedTk):
         self.load_config()
         self.update_treeviews_by_id(1)
         self.next_day_sequence(True)
-        self.backup_start()
         
     def create_frames(self):
         # Frame para CRUD de Funcionários
@@ -102,7 +103,7 @@ class View(ThemedTk):
         menu_arquivo.add_command(label="Configurações", command=self.open_config_window)
         menu_arquivo.add_command(label="Ajuda")
         menu_arquivo.add_separator()
-        menu_arquivo.add_command(label="Sair", command=self.quit)
+        menu_arquivo.add_command(label="Sair", command=self.close_destroy)
     
     def create_funcionarios_components(self):
         # Entry para nome do funcionário
@@ -224,26 +225,29 @@ class View(ThemedTk):
         horas_negativas = self.mg.calc_hours_negativas(self.data_dash)
         
         if self.data_dash:
-            label_employee_dash = ttk.Label(self.frame_dashboard, text=f"Funcionário: {self.entry_nome.get()}", font=("TkDefaultFont", 12,"bold"))
+            button_relatorio = ttk.Button(self.frame_dashboard, text="Gerar Relatório", command=self.relatorio)
+            button_relatorio.grid(row=0, column=3, sticky="e")
+            
+            label_employee_dash = ttk.Label(self.frame_dashboard, text=f"FUNCIONÁRIO: {self.entry_nome.get()}", font=("TkDefaultFont", 12,"bold"))
             label_employee_dash.grid(row=0, column=0, sticky="ew")
-            label_filter_data = ttk.Label(self.frame_dashboard, text=f"Período: {self.entry_data_inicio.get()} a {self.entry_data_fim.get()}\n", font=("TkDefaultFont", 12,"bold"))
+            label_filter_data = ttk.Label(self.frame_dashboard, text=f"PERÍODO: {self.entry_data_inicio.get()} a {self.entry_data_fim.get()}\n", font=("TkDefaultFont", 12,"bold"))
             label_filter_data.grid(row=1, column=0, sticky="ew")
             
             fonte = ("TkDefaultFont", 12,"bold")
             
-            label_horas_trabalhadas = ttk.Label(self.frame_dashboard, text=f"Horas trabalhadas: {horas_trabalhadas_normais}", font=fonte)
+            label_horas_trabalhadas = ttk.Label(self.frame_dashboard, text=f"HORAS TRABALHADAS: {horas_trabalhadas_normais}", font=fonte)
             label_horas_trabalhadas.grid(row=2, column=0, sticky="ew")
             
-            label_horas_atestado = ttk.Label(self.frame_dashboard, text=f"Horas atestado: {horas_atestados}", font=fonte)
+            label_horas_atestado = ttk.Label(self.frame_dashboard, text=f"HORAS DE ATESTADO: {horas_atestados}", font=fonte)
             label_horas_atestado.grid(row=3, column=0, sticky="ew")
             
-            label_horas_feriado = ttk.Label(self.frame_dashboard, text=f"Horas feriados: {horas_feriado}", font=fonte)
+            label_horas_feriado = ttk.Label(self.frame_dashboard, text=f"HORAS FERIADO: {horas_feriado}", font=fonte)
             label_horas_feriado.grid(row=4, column=0, sticky="ew")
             
-            label_horas_extras = ttk.Label(self.frame_dashboard, text=f"Horas extras: {horas_extras}", font=fonte)
+            label_horas_extras = ttk.Label(self.frame_dashboard, text=f"HORAS EXTRAS: {horas_extras}", font=fonte)
             label_horas_extras.grid(row=5, column=0, sticky="ew")
             
-            label_horas_esperadas = ttk.Label(self.frame_dashboard, text=f"Horas esperadas: {horas_esperadas}", font=fonte)
+            label_horas_esperadas = ttk.Label(self.frame_dashboard, text=f"HORAS ESPERADAS: {horas_esperadas}", font=fonte)
             label_horas_esperadas.grid(row=6, column=0, sticky="ew")
             
             separador = ttk.Separator(self.frame_dashboard, orient="horizontal")
@@ -251,33 +255,33 @@ class View(ThemedTk):
             
             horas_totais = self.mg.minutes_to_time(self.mg.time_to_minute(horas_trabalhadas_normais) + self.mg.time_to_minute(horas_atestados) + self.mg.time_to_minute(horas_feriado))
             
-            label_horas_totais_trabalhadas = ttk.Label(self.frame_dashboard, font=fonte, foreground="blue", text=f"Horas totais: {horas_totais}\n")
+            label_horas_totais_trabalhadas = ttk.Label(self.frame_dashboard, font=fonte, foreground="blue", text=f"HORAS TOTAIS: {horas_totais}\n")
             label_horas_totais_trabalhadas.grid(row=8, column=0, sticky="ew")
             
             balanço = self.mg.minutes_to_time(self.mg.time_to_minute(horas_totais) - self.mg.time_to_minute(horas_esperadas))
             
-            label_quantidade_atestados = ttk.Label(self.frame_dashboard, foreground="green" if self.mg.time_to_minute(balanço) >= 0 else "red", text=f"Balanço total de horas: {balanço}\n", font=fonte)
+            label_quantidade_atestados = ttk.Label(self.frame_dashboard, foreground="green" if self.mg.time_to_minute(balanço) >= 0 else "red", text=f"BALANÇO DE HORAS: {balanço}\n", font=fonte)
             label_quantidade_atestados.grid(row=9, column=0, sticky="ew")
             
-            label_horas_faltou = ttk.Label(self.frame_dashboard, text=f"Horas faltou: {horas_faltou}", font=fonte)
+            label_horas_faltou = ttk.Label(self.frame_dashboard, text=f"HORAS FALTOU: {horas_faltou}", font=fonte)
             label_horas_faltou.grid(row=10, column=0, sticky="ew")
             
-            label_horas_negativas = ttk.Label(self.frame_dashboard, text=f"Deficit Horas diárias: {horas_negativas}", font=fonte)
+            label_horas_negativas = ttk.Label(self.frame_dashboard, text=f"HORAS NÃO CUMPRIDAS: {horas_negativas}", font=fonte)
             label_horas_negativas.grid(row=11, column=0, sticky="ew")
             
             separador1 = ttk.Separator(self.frame_dashboard, orient="horizontal")
             separador1.grid(row=12, column=0, columnspan=3, sticky="nsew")
     
-            label_horas_nao_cumpridas = ttk.Label(self.frame_dashboard, font=fonte, foreground="red", text=f"Horas totais não cumpridas: {self.mg.minutes_to_time(self.mg.time_to_minute(horas_faltou) + self.mg.time_to_minute(horas_negativas))}\n")
+            label_horas_nao_cumpridas = ttk.Label(self.frame_dashboard, font=fonte, foreground="red", text=f"HORAS TOTAIS NÃO CUMPRIDAS: {self.mg.minutes_to_time(self.mg.time_to_minute(horas_faltou) + self.mg.time_to_minute(horas_negativas))}\n")
             label_horas_nao_cumpridas.grid(row=13, column=0, sticky="ew")
             
-            label_quantidade_atestados = ttk.Label(self.frame_dashboard, text=f"Quantidade de atestados: {quantidade_atestados}", font=fonte)
+            label_quantidade_atestados = ttk.Label(self.frame_dashboard, text=f"QUANTIDADE DE ATESTADOS: {quantidade_atestados}", font=fonte)
             label_quantidade_atestados.grid(row=14, column=0, sticky="ew")
             
-            label_quantidade_feriados = ttk.Label(self.frame_dashboard, text=f"Quantidade de feriados: {quantidade_feriados}", font=fonte)
+            label_quantidade_feriados = ttk.Label(self.frame_dashboard, text=f"QUANTIDADE DE FERIADOS: {quantidade_feriados}", font=fonte)
             label_quantidade_feriados.grid(row=15, column=0, sticky="ew")
             
-            label_quantidade_faltas = ttk.Label(self.frame_dashboard, text=f"Quantidade faltas: {quantidade_faltas}", font=fonte)
+            label_quantidade_faltas = ttk.Label(self.frame_dashboard, text=f"QUANTIDADE DE FALTAS: {quantidade_faltas}", font=fonte)
             label_quantidade_faltas.grid(row=16, column=0, sticky="ew")      
             
     def selected_point(self, event):
@@ -501,10 +505,17 @@ class View(ThemedTk):
         self.domingo_check = ttk.Checkbutton(top, text="Domingo?", variable=self.domingo_var)
         self.domingo_check.pack(pady=10, padx=70, anchor="w")
         
+        self.label_version = ttk.Label(top, text="Versões de backup:")
+        self.label_version.pack(pady=(10, 0), padx=70, anchor="w")
+        self.version_box = ttk.Combobox(top, state="readonly")
+        self.version_box['values'] = (0, 1, 2, 3)
+        self.version_box.pack(pady=(0, 10), padx=70, anchor="w")
+        
         self.backup = ttk.Button(top, text="Backup", command=self.backup_select)
         self.backup.pack(pady=(10, 0), padx=70, anchor="w")
         self.load_config()
         self.entry_carga_horaria.insert(0, self.carga_horaria)
+        self.version_box.current(self.version)
           
         ttk.Button(top, text="Salvar", command=lambda: self.save_config(top)).pack(pady=10, padx=70, anchor="w")
         
@@ -518,6 +529,7 @@ class View(ThemedTk):
             self.sequence_var.set(config.get("sequencial", ""))
             self.sabado_var.set(config.get("sabado", ""))
             self.domingo_var.set(config.get("domingo", ""))
+            self.version = int(config.get("versoes", ""))
             self.backup_dir = config.get("backup_dir", "")  
               
     def save_config(self, top):
@@ -530,8 +542,10 @@ class View(ThemedTk):
                   "sequencial": self.sequence_var.get(),
                   "sabado": self.sabado_var.get(),
                   "domingo": self.domingo_var.get(),
+                  "versoes": self.version_box.get(),
                   "backup_dir": self.backup_dir
                   }
+        self.version = int(self.version_box.get())
         with open(self.config_file, "w") as file:
             json.dump(config, file, indent=4)
         top.destroy()
@@ -541,6 +555,7 @@ class View(ThemedTk):
                           "sequencial": False,
                           "sabado": False,
                           "domingo": False,
+                          "versoes": 0,
                           "backup_dir": None
                           }
         with open(self.config_file, "w") as file:
@@ -603,6 +618,7 @@ class View(ThemedTk):
 
     def close_destroy(self):
         self.mg.close_connection_manager()
+        self.backup_start()
         self.quit()
 
     def backup_select(self):
@@ -616,14 +632,24 @@ class View(ThemedTk):
             return None
         
     def backup_start(self):
-        if self.backup_dir:
+        if self.backup_dir and self.version > 0:
             database = "database.db"
             pasta = os.path.join(self.backup_dir, "backup_pointh")
             os.makedirs(pasta, exist_ok=True)
-            destino = os.path.join(pasta, database)
+            
+            now = time.strftime("%d-%m-%Y_%H-%M-%S")
+            destino = os.path.join(pasta, f"{database}_{now}")
+            
             shutil.copy2(database, destino)
+            
+            backups = sorted(os.listdir(pasta), key=lambda x: os.path.getctime(os.path.join(pasta, x)))
+            
+            if len(backups) > self.version:
+                backups_a_remover = backups[:-self.version]
+                for backup in backups_a_remover:
+                    os.remove(os.path.join(pasta, backup))
         else:
-            question = messagebox.askyesno("Atenção", "Backup não configurado, configurar?")
+            question = messagebox.askyesno("Atenção", "Backup não configurado ou versões esta como 0, configurar?")
             if question:
                 self.open_config_window()
     
@@ -663,6 +689,9 @@ class View(ThemedTk):
             self.entry_data.delete(0, tk.END)
             self.entry_data.insert(0, date_save)
             return
+    
+    def relatorio(self):
+        print(self.data_dash)
     
 if __name__ == "__main__":
     app = View()
