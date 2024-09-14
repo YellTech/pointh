@@ -9,6 +9,7 @@ import shutil
 import datetime
 import time
 from datetime import timedelta
+import csv
 import json
 import os
 import re
@@ -230,6 +231,9 @@ class View(ThemedTk):
             
             label_employee_dash = ttk.Label(self.frame_dashboard, text=f"FUNCIONÁRIO: {self.entry_nome.get()}", font=("TkDefaultFont", 12,"bold"))
             label_employee_dash.grid(row=0, column=0, sticky="ew")
+            
+            self.periodo_var = f'{self.entry_data_inicio.get()}_{self.entry_data_fim.get()}'
+            
             label_filter_data = ttk.Label(self.frame_dashboard, text=f"PERÍODO: {self.entry_data_inicio.get()} a {self.entry_data_fim.get()}\n", font=("TkDefaultFont", 12,"bold"))
             label_filter_data.grid(row=1, column=0, sticky="ew")
             
@@ -624,7 +628,7 @@ class View(ThemedTk):
     def backup_select(self):
         root = tk.Tk()
         root.withdraw()
-        self.backup_dir = filedialog.askdirectory()
+        self.backup_dir = filedialog.askdirectory(title="Seelecione um local para armazenar os backups")
 
         if self.backup_dir:
             return self.backup_dir
@@ -691,8 +695,34 @@ class View(ThemedTk):
             return
     
     def relatorio(self):
-        print(self.data_dash)
-    
+        root = tk.Tk()
+        root.withdraw()
+        directory = filedialog.askdirectory(title="Selecione o local para salvar o relatório")
+        
+        if not directory:
+            messagebox.showerror("Erro", "Nenhum local selecionado para o relatório")
+            return
+        
+        data = self.data_dash    
+        file_name =  f"{self.employee_label.cget('text')}_{self.periodo_var}.csv"   
+        file_path = os.path.join(directory, file_name)
+        
+        if os.path.exists(file_path):
+            resposta = messagebox.askyesno("Atenção", f"O arquivo {file_name} já existe. Deseja substituir?")
+            if not resposta:
+                messagebox.showinfo("Atenção", "Operação cancelada pelo usuário.")
+                return
+        
+        headers = ["Id_Ponto", "ID_Funcionario", "Data", "Entrada1", "Saida1", "Entrada2"
+                , "Saida2", "Entrada3", "Saida3", "Total", "Carga_Dia", "Saldo_Dia", "Presença"]
+        
+        with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            
+            writer.writerow(headers)
+            writer.writerows(data)
+            messagebox.showinfo("Atenção", "Relatório criado com sucesso.")
+            
 if __name__ == "__main__":
     app = View()
     app.mainloop()
