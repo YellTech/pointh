@@ -108,6 +108,7 @@ class Manager:
                                                 (self.minutes_to_time(self.total_add_point(entrys_minutes) - self.load_config_workload())) if not flag_presence
                                                 else f"-{self.minutes_to_time(self.load_config_workload())}" if flag_presence == 1
                                                 else f"{self.minutes_to_time(self.load_config_workload())}" if flag_presence == 2
+                                                else f"{self.minutes_to_time(self.load_config_workload())}" if flag_presence == 3
                                                 else "ERRO"
                                                 , entrys_data[8]) 
                 return result 
@@ -298,6 +299,16 @@ class Manager:
                 quantidade_atestados += 1
                 horas_atestado += minutos
         return self.minutes_to_time(horas_atestado), quantidade_atestados
+
+    def calc_hour_feriado(self, data):
+        horas_feriado = 0
+        quantidade_feriados = 0
+        for tupla in data:
+            if tupla[12] == "FERIADO":
+                minutos = self.time_to_minute(tupla[10])
+                quantidade_feriados += 1
+                horas_feriado += minutos
+        return self.minutes_to_time(horas_feriado), quantidade_feriados
 
     def calc_hours_faltou(self, data):
         horas_faltou = 0

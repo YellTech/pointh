@@ -23,6 +23,9 @@ class View(ThemedTk):
         self.presence_flag = None
         self.data_dash = []
         self.control_date = None
+        self.sequence_var = tk.BooleanVar()
+        self.sabado_var = tk.BooleanVar()
+        self.domingo_var = tk.BooleanVar()
         self.protocol("WM_DELETE_WINDOW", self.close_destroy)
         
         self.title("Controle de Ponto")
@@ -41,6 +44,7 @@ class View(ThemedTk):
         self.create_menu()
         self.load_config()
         self.update_treeviews_by_id(1)
+        self.next_day_sequence(True)
         self.backup_start()
         
     def create_frames(self):
@@ -70,7 +74,7 @@ class View(ThemedTk):
         self.frame_dashboard.grid_columnconfigure(0, weight=2)
         self.frame_dashboard.grid_columnconfigure(1, weight=1)
         self.frame_dashboard.grid_columnconfigure(2, weight=2)
-        self.frame_dashboard.grid_rowconfigure(14, weight=1)
+        self.frame_dashboard.grid_rowconfigure(17, weight=1)
         
         # Frame Footer
         self.frame_footer = ttk.Frame(self, padding=10)
@@ -136,7 +140,7 @@ class View(ThemedTk):
         self.entry_data = DateEntry(self.frame_ponto, date_pattern='dd-mm-YYYY')
         self.entry_data.grid(row=1, column=0, sticky="ew", pady=5, padx=(0, 15))
         self.presence_box = ttk.Combobox(self.frame_ponto, state="readonly")
-        self.presence_box['values'] = ("NORMAL", "FALTOU", "ATESTADO")
+        self.presence_box['values'] = ("NORMAL", "FALTOU", "ATESTADO", "FERIADO")
         self.presence_box.current(0)
         self.presence_box.grid(row=1, column=1, sticky="ew", pady=5, padx=(15, 0))
         self.presence_box.bind("<<ComboboxSelected>>", lambda event: self.presence_selected())
@@ -214,6 +218,7 @@ class View(ThemedTk):
         self.clear_frame(self.frame_dashboard)
         horas_trabalhadas_normais, horas_esperadas = self.mg.calc_hours_trabalhadas(self.data_dash)
         horas_atestados, quantidade_atestados = self.mg.calc_hours_atestado(self.data_dash) 
+        horas_feriado, quantidade_feriados = self.mg.calc_hour_feriado(self.data_dash)
         horas_faltou, quantidade_faltas = self.mg.calc_hours_faltou(self.data_dash)
         horas_extras = self.mg.calc_hours_extra(self.data_dash)
         horas_negativas = self.mg.calc_hours_negativas(self.data_dash)
@@ -232,35 +237,48 @@ class View(ThemedTk):
             label_horas_atestado = ttk.Label(self.frame_dashboard, text=f"Horas atestado: {horas_atestados}", font=fonte)
             label_horas_atestado.grid(row=3, column=0, sticky="ew")
             
+            label_horas_feriado = ttk.Label(self.frame_dashboard, text=f"Horas feriados: {horas_feriado}", font=fonte)
+            label_horas_feriado.grid(row=4, column=0, sticky="ew")
+            
             label_horas_extras = ttk.Label(self.frame_dashboard, text=f"Horas extras: {horas_extras}", font=fonte)
-            label_horas_extras.grid(row=4, column=0, sticky="ew")
+            label_horas_extras.grid(row=5, column=0, sticky="ew")
             
             label_horas_esperadas = ttk.Label(self.frame_dashboard, text=f"Horas esperadas: {horas_esperadas}", font=fonte)
-            label_horas_esperadas.grid(row=5, column=0, sticky="ew")
+            label_horas_esperadas.grid(row=6, column=0, sticky="ew")
             
             separador = ttk.Separator(self.frame_dashboard, orient="horizontal")
-            separador.grid(row=6, column=0, columnspan=3, sticky="nsew")
+            separador.grid(row=7, column=0, columnspan=3, sticky="nsew")
             
-            label_horas_totais_trabalhadas = ttk.Label(self.frame_dashboard, font=fonte, foreground="blue", text=f"Horas totais: {self.mg.minutes_to_time(self.mg.time_to_minute(horas_trabalhadas_normais) + self.mg.time_to_minute(horas_extras) + self.mg.time_to_minute(horas_atestados))}\n")
-            label_horas_totais_trabalhadas.grid(row=7, column=0, sticky="ew")
+            horas_totais = self.mg.minutes_to_time(self.mg.time_to_minute(horas_trabalhadas_normais) + self.mg.time_to_minute(horas_atestados) + self.mg.time_to_minute(horas_feriado))
+            
+            label_horas_totais_trabalhadas = ttk.Label(self.frame_dashboard, font=fonte, foreground="blue", text=f"Horas totais: {horas_totais}\n")
+            label_horas_totais_trabalhadas.grid(row=8, column=0, sticky="ew")
+            
+            balanço = self.mg.minutes_to_time(self.mg.time_to_minute(horas_totais) - self.mg.time_to_minute(horas_esperadas))
+            
+            label_quantidade_atestados = ttk.Label(self.frame_dashboard, foreground="green" if self.mg.time_to_minute(balanço) >= 0 else "red", text=f"Balanço total de horas: {balanço}\n", font=fonte)
+            label_quantidade_atestados.grid(row=9, column=0, sticky="ew")
             
             label_horas_faltou = ttk.Label(self.frame_dashboard, text=f"Horas faltou: {horas_faltou}", font=fonte)
-            label_horas_faltou.grid(row=8, column=0, sticky="ew")
+            label_horas_faltou.grid(row=10, column=0, sticky="ew")
             
             label_horas_negativas = ttk.Label(self.frame_dashboard, text=f"Deficit Horas diárias: {horas_negativas}", font=fonte)
-            label_horas_negativas.grid(row=9, column=0, sticky="ew")
+            label_horas_negativas.grid(row=11, column=0, sticky="ew")
             
             separador1 = ttk.Separator(self.frame_dashboard, orient="horizontal")
-            separador1.grid(row=10, column=0, columnspan=3, sticky="nsew")
+            separador1.grid(row=12, column=0, columnspan=3, sticky="nsew")
     
-            label_horas_nao_cumpridas = ttk.Label(self.frame_dashboard, font=fonte, foreground="red", text=f"Horas totais não cumpridas: -{self.mg.minutes_to_time(self.mg.time_to_minute(horas_esperadas) - (self.mg.time_to_minute(horas_trabalhadas_normais) + self.mg.time_to_minute(horas_atestados)))}\n")
-            label_horas_nao_cumpridas.grid(row=11, column=0, sticky="ew")
+            label_horas_nao_cumpridas = ttk.Label(self.frame_dashboard, font=fonte, foreground="red", text=f"Horas totais não cumpridas: {self.mg.minutes_to_time(self.mg.time_to_minute(horas_faltou) + self.mg.time_to_minute(horas_negativas))}\n")
+            label_horas_nao_cumpridas.grid(row=13, column=0, sticky="ew")
             
             label_quantidade_atestados = ttk.Label(self.frame_dashboard, text=f"Quantidade de atestados: {quantidade_atestados}", font=fonte)
-            label_quantidade_atestados.grid(row=12, column=0, sticky="ew")
+            label_quantidade_atestados.grid(row=14, column=0, sticky="ew")
+            
+            label_quantidade_feriados = ttk.Label(self.frame_dashboard, text=f"Quantidade de feriados: {quantidade_feriados}", font=fonte)
+            label_quantidade_feriados.grid(row=15, column=0, sticky="ew")
             
             label_quantidade_faltas = ttk.Label(self.frame_dashboard, text=f"Quantidade faltas: {quantidade_faltas}", font=fonte)
-            label_quantidade_faltas.grid(row=13, column=0, sticky="ew")      
+            label_quantidade_faltas.grid(row=16, column=0, sticky="ew")      
             
     def selected_point(self, event):
         try:
@@ -270,7 +288,7 @@ class View(ThemedTk):
             self.id_point = value[0]
             self.entry_data.delete(0, tk.END)
             self.entry_data.insert(0, point[2])
-            presence_map = {"NORMAL": 0, "FALTOU": 1, "ATESTADO": 2}
+            presence_map = {"NORMAL": 0, "FALTOU": 1, "ATESTADO": 2, "FERIADO": 3}
             if point[12] in presence_map:
                 index = presence_map[point[12]]
                 if index < len(self.presence_box["values"]):
@@ -300,6 +318,7 @@ class View(ThemedTk):
             self.entry_nome.delete(0, tk.END)
             self.entry_nome.insert(0, self.values[1])
             self.entry_data.set_date(today)
+            self.next_day_sequence(True)
             self.clear_entrys([self.entry_entrada_1, self.entry_entrada_2, self.entry_entrada_3, 
                                self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
             self.update_treeviews_by_id(2)
@@ -390,7 +409,7 @@ class View(ThemedTk):
 
     def presence_selected(self):
         presence = self.presence_box.get()
-        if presence in ("FALTOU", "ATESTADO"):
+        if presence in ("FALTOU", "ATESTADO", "FERIADO"):
             self.entry_entrada_1.delete(0, tk.END)
             self.entry_entrada_1.insert(0, "00:00")
             self.entry_entrada_1.configure(state="disable")
@@ -413,6 +432,8 @@ class View(ThemedTk):
                 self.presence_flag = 1
             elif presence == "ATESTADO":
                 self.presence_flag = 2
+            elif presence == "FERIADO":
+                self.presence_flag = 3
         else:
             self.presence_box_reset()
             self.presence_flag = None
@@ -473,10 +494,6 @@ class View(ThemedTk):
         self.entry_carga_horaria.pack(padx=70, anchor="w")
         self.entry_carga_horaria.bind('<FocusOut>', lambda e: self.format_time_entry(self.entry_carga_horaria))
         
-        self.sequence_var = tk.BooleanVar()
-        self.sabado_var = tk.BooleanVar()
-        self.domingo_var = tk.BooleanVar()
-        
         self.sequence_check = ttk.Checkbutton(top, text="Sequencial?", variable=self.sequence_var)
         self.sequence_check.pack(pady=(25, 10), padx=70, anchor="w")
         self.sabado_check = ttk.Checkbutton(top, text="Sabádo?", variable=self.sabado_var)
@@ -498,9 +515,9 @@ class View(ThemedTk):
         with open(self.config_file, "r") as file:
             config = json.load(file)
             self.carga_horaria = config.get("carga_horaria", "")
-            self.sequence_check = config.get("sequencial", "")
-            self.sabado_check = config.get("sabado", "")
-            self.domingo_check = config.get("domingo", "")
+            self.sequence_var.set(config.get("sequencial", ""))
+            self.sabado_var.set(config.get("sabado", ""))
+            self.domingo_var.set(config.get("domingo", ""))
             self.backup_dir = config.get("backup_dir", "")  
               
     def save_config(self, top):
@@ -610,23 +627,42 @@ class View(ThemedTk):
             if question:
                 self.open_config_window()
     
-    def next_day_sequence(self):
+    def next_day_sequence(self, init=None):
         
         new_date = self.entry_data.get_date() + timedelta(days=1)
+        new_date_str = str(new_date)
         
-        if self.sequence_var and self.sabado_var and not self.domingo_var:
+        if self.sequence_var.get() and self.sabado_var.get() and not self.domingo_var.get():
             while new_date.weekday() ==5:
                 new_date += timedelta(days=1)
-        elif self.sequence_var and self.domingo_var and not self.sabado_var:
+            new_date_str = str(new_date)
+            self.entry_data.delete(0, tk.END)
+            self.entry_data.insert(0, self.mg.convert_to_br_date(new_date_str))
+            return
+        elif self.sequence_var.get() and self.domingo_var.get() and not self.sabado_var.get():
             while new_date.weekday() == 6:
                 new_date += timedelta(days=1)
-        elif self.sequence_var and self.sabado_var and self.domingo_var:
+            new_date_str = str(new_date)
+            self.entry_data.delete(0, tk.END)
+            self.entry_data.insert(0, self.mg.convert_to_br_date(new_date_str))
+            return
+        elif self.sequence_var.get() and self.sabado_var.get() and self.domingo_var.get():
             while new_date.weekday() >= 5:
                 new_date += timedelta(days=1)
-        elif self.sequence_var:        
-            return self.entry_data.insert(0, new_date)
+            new_date_str = str(new_date)
+            self.entry_data.delete(0, tk.END)
+            self.entry_data.insert(0, self.mg.convert_to_br_date(new_date_str))
+            return
+        elif self.sequence_var.get() and not init: 
+            new_date_str = str(new_date)
+            self.entry_data.delete(0, tk.END)
+            self.entry_data.insert(0, self.mg.convert_to_br_date(new_date_str))
+            return
         else:
-            return self.entry_data.insert(0, self.entry_data.get())
+            date_save = self.entry_data.get()
+            self.entry_data.delete(0, tk.END)
+            self.entry_data.insert(0, date_save)
+            return
     
 if __name__ == "__main__":
     app = View()
