@@ -48,6 +48,7 @@ class View(ThemedTk):
         self.load_config()
         self.update_treeviews_by_id(1)
         self.next_day_sequence(True)
+        self.backup_start(True)
         
     def create_frames(self):
         # Frame para CRUD de Funcionários
@@ -635,8 +636,8 @@ class View(ThemedTk):
         else:
             return None
         
-    def backup_start(self):
-        if self.backup_dir and self.version > 0:
+    def backup_start(self, init=None):
+        if self.backup_dir and self.version > 0 and not init:
             database = "database.db"
             pasta = os.path.join(self.backup_dir, "backup_pointh")
             os.makedirs(pasta, exist_ok=True)
@@ -652,7 +653,7 @@ class View(ThemedTk):
                 backups_a_remover = backups[:-self.version]
                 for backup in backups_a_remover:
                     os.remove(os.path.join(pasta, backup))
-        else:
+        elif init:
             question = messagebox.askyesno("Atenção", "Backup não configurado ou versões esta como 0, configurar?")
             if question:
                 self.open_config_window()
