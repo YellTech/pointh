@@ -147,6 +147,7 @@ class Manager:
                                             self.minutes_to_time(self.total_add_point(entrys_minutes) - self.load_config_workload()) if not flag_presence
                                             else f"-{self.minutes_to_time(self.load_config_workload())}" if flag_presence == 1
                                             else f"{self.minutes_to_time(self.load_config_workload())}" if flag_presence == 2
+                                            else f"{self.minutes_to_time(self.load_config_workload())}" if flag_presence == 3
                                             else "ERRO" ,
                                             entrys_data_update[8]) 
             return result           

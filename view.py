@@ -302,6 +302,7 @@ class View(ThemedTk):
                 index = presence_map[point[12]]
                 if index < len(self.presence_box["values"]):
                     self.presence_box.current(index)
+                    self.presence_flag = index
             self.entry_entrada_1.delete(0, tk.END)
             self.entry_entrada_1.insert(0, point[3])
             self.entry_saida_1.delete(0, tk.END)
@@ -388,6 +389,7 @@ class View(ThemedTk):
             self.presence_box_reset()
             self.presence_selected()
             self.next_day_sequence()
+            self.entry_entrada_1.focus_set()
     
     def update_point(self):
         entrys_point_update = [self.id_point, self.entry_data.get(), self.entry_entrada_1.get(), self.entry_saida_1.get(),
