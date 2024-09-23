@@ -403,6 +403,7 @@ class View(ThemedTk):
             self.presence_flag = None
             self.presence_box_reset()
             self.presence_selected()
+            self.entry_entrada_1.focus_set()
             
     def delete_point(self):
         if self.id_point:
@@ -415,6 +416,7 @@ class View(ThemedTk):
                                self.entry_saida_1, self.entry_saida_2, self.entry_saida_3])
                 self.update_treeviews_by_id(2)
                 self.presence_box_reset()
+                self.entry_entrada_1.focus_set()
         else:
             messagebox.showerror("Erro", "Selecione um ponto para deletar.") 
 
