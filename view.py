@@ -9,7 +9,7 @@ import shutil
 import datetime
 import time
 from datetime import timedelta
-import csv
+import pandas as pd
 import json
 import os
 import re
@@ -263,7 +263,7 @@ class View(ThemedTk):
             label_horas_totais_trabalhadas = ttk.Label(self.frame_dashboard, font=fonte, foreground="blue", text=f"HORAS TOTAIS: {horas_totais}\n")
             label_horas_totais_trabalhadas.grid(row=8, column=0, sticky="ew")
             
-            balanço = self.mg.minutes_to_time(self.mg.time_to_minute(horas_totais) - self.mg.time_to_minute(horas_esperadas))
+            balanço = self.mg.minutes_to_time(self.mg.time_to_minute(horas_extras) + self.mg.time_to_minute(horas_negativas))
             
             label_quantidade_atestados = ttk.Label(self.frame_dashboard, foreground="green" if self.mg.time_to_minute(balanço) >= 0 else "red", text=f"BALANÇO DE HORAS: {balanço}\n", font=fonte)
             label_quantidade_atestados.grid(row=9, column=0, sticky="ew")
@@ -641,7 +641,7 @@ class View(ThemedTk):
             return None
         
     def backup_start(self, init=None):
-        if self.backup_dir and self.version > 0 and not init:
+        if self.backup_dir and self.version > 0:
             database = "database.db"
             pasta = os.path.join(self.backup_dir, "backup_pointh")
             os.makedirs(pasta, exist_ok=True)
@@ -709,7 +709,7 @@ class View(ThemedTk):
             return
         
         data = self.data_dash    
-        file_name =  f"{self.employee_label.cget('text')}_{self.periodo_var}.csv"   
+        file_name =  f"{self.employee_label.cget('text')}_{self.periodo_var}.xlsx"   
         file_path = os.path.join(directory, file_name)
         
         if os.path.exists(file_path):
@@ -721,12 +721,20 @@ class View(ThemedTk):
         headers = ["Id_Ponto", "ID_Funcionario", "Data", "Entrada1", "Saida1", "Entrada2"
                 , "Saida2", "Entrada3", "Saida3", "Total", "Carga_Dia", "Saldo_Dia", "Presença"]
         
-        with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.writer(csvfile)
-            
-            writer.writerow(headers)
-            writer.writerows(data)
-            messagebox.showinfo("Atenção", "Relatório criado com sucesso.")
+        df = pd.DataFrame(data, columns=headers)
+    
+        # Converter a coluna "Data" para datetime para garantir a ordenação correta
+        df['Data'] = pd.to_datetime(df['Data'], dayfirst=True, errors='coerce')
+    
+        # Ordenar os dados pela coluna "Data"
+        df = df.sort_values(by='Data')
+
+        # Formatando a coluna Data no formato brasileiro DD/MM/YYYY
+        df['Data'] = df['Data'].dt.strftime('%d/%m/%Y')
+        
+        # Salvar o DataFrame como um arquivo Excel
+        df.to_excel(file_path, index=False, engine='openpyxl')
+        messagebox.showinfo("Atenção", "Relatório criado com sucesso.")
             
 if __name__ == "__main__":
     app = View()
